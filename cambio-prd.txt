@@ -1,0 +1,937 @@
+# Cambio - Product Requirements Document
+
+## 1. Product Overview
+
+### 1.1 Product Name
+**Cambio**
+
+### 1.2 Purpose
+A web-based multiplayer card game application that allows 2-4 players to play Cambio together in real-time through a shared browser session.
+
+### 1.3 Target Platform
+Desktop web browsers (mobile support deferred to future phase)
+
+### 1.4 Core Value Proposition
+Enable groups of friends to play the popular card game Cambio online together with an intuitive, fast-paced interface that captures the excitement and speed of the physical card game.
+
+---
+
+## 2. Technical Architecture
+
+### 2.1 Technology Stack
+
+**Frontend:**
+- React.js
+- CSS/Styled Components for styling
+- Drag-and-drop library (react-dnd or native HTML5 drag-and-drop)
+
+**Backend:**
+- Node.js
+- Socket.io for real-time bidirectional communication
+- Express.js for API endpoints
+
+**Hosting:**
+- Frontend: Vercel or Netlify
+- Backend: Railway or Render
+
+**Database:**
+- Not required for MVP (all game state managed in-memory via Socket.io rooms)
+- Optional: Redis for session persistence if needed in future
+
+### 2.2 System Architecture
+
+```
+┌─────────────┐         WebSocket          ┌─────────────┐
+│   Client 1  │◄──────────────────────────►│             │
+└─────────────┘                             │             │
+┌─────────────┐         WebSocket          │   Node.js   │
+│   Client 2  │◄──────────────────────────►│   Server    │
+└─────────────┘                             │  (Socket.io)│
+┌─────────────┐         WebSocket          │             │
+│   Client 3  │◄──────────────────────────►│             │
+└─────────────┘                             │             │
+┌─────────────┐         WebSocket          │             │
+│   Client 4  │◄──────────────────────────►│             │
+└─────────────┘                             └─────────────┘
+```
+
+---
+
+## 3. User Flows
+
+### 3.1 Game Setup Flow
+
+1. **Landing Page**
+   - User arrives at homepage
+   - Sees "Create Game" button
+   - User clicks "Create Game"
+
+2. **Room Creation**
+   - System generates unique room code (e.g., "ABCD-1234")
+   - System generates shareable link
+   - User sees lobby screen with:
+     - Room code displayed prominently
+     - "Copy Link" button
+     - List of joined players (starting with creator)
+     - "Start Game" button (disabled until ≥2 players)
+
+3. **Player Joining**
+   - Other players click shared link
+   - Prompted to enter nickname
+   - Join lobby and appear in player list
+   - Creator sees "Start Game" button enable when ≥2 players present
+
+4. **Game Start**
+   - Creator clicks "Start Game"
+   - System randomly selects dealer
+   - System displays turn order clearly (e.g., Player 1 → Player 2 → Player 3)
+   - Game begins with card dealing phase
+
+### 3.2 Initial Memory Phase Flow
+
+1. **Card Distribution**
+   - Each player receives 4 cards face-down in 2×2 grid
+   - Cards are positioned in front of each player's area
+
+2. **Memory Window**
+   - System prompts each player (in sequence or simultaneously): "Look at your 2 closest cards"
+   - Player sees 2 cards flip over (visible only to them)
+   - Modal/overlay shows: "Memorize these cards!"
+   - "Done Looking" button appears
+   - Player clicks "Done Looking" when ready
+   - Cards flip back face-down
+
+3. **Game Start Confirmation**
+   - After all players complete memory phase
+   - First player's turn begins automatically
+
+### 3.3 Main Turn Flow
+
+1. **Turn Indicator**
+   - Current player's area highlighted with border/glow
+   - Turn indicator shows: "Your Turn" or "Player X's Turn"
+
+2. **Draw Card Action**
+   - Active player clicks deck
+   - Card drawn and displayed privately to player in modal/panel
+   - Card shows value and suit
+
+3. **Decision Point - Player chooses ONE option:**
+
+   **Option A: Swap with Own Card**
+   - Player clicks one of their 4 face-down cards
+   - Selected card swaps with drawn card
+   - Swapped card placed face-up on discard pile
+   - Drawn card takes position in grid (face-down)
+
+   **Option B: Use Special Card Ability**
+   - Available only if card is 7, 8, 9, 10, J, Q, or Black King
+   - Player clicks "Use Ability" button
+   - Special ability activates (see section 3.4)
+   - Card placed face-up on discard pile
+
+   **Option C: Discard**
+   - Player clicks "Discard" button
+   - Card placed face-up on discard pile without swapping
+
+4. **Sticking Window Opens**
+   - 4-second countdown timer appears
+   - All players can attempt to stick matching cards
+   - (See section 3.5 for sticking mechanics)
+
+5. **Turn Ends**
+   - After sticking window expires or next player draws
+   - Turn passes to next player in rotation
+
+### 3.4 Special Card Abilities Flow
+
+**7 or 8: Look at Your Own Card**
+1. Player selects "Use Ability" when they draw 7 or 8
+2. Card played to discard pile
+3. Prompt appears: "Select one of your cards to look at"
+4. Player clicks one of their own face-down cards
+5. Card flips over (visible only to that player)
+6. Other players see notification: "Player X is looking at their card"
+7. "Done Looking" button appears
+8. Player clicks when finished
+9. Card flips back face-down
+
+**9 or 10: Look at Someone Else's Card**
+1. Player selects "Use Ability"
+2. Card played to discard pile
+3. Prompt: "Select another player's card to look at"
+4. Player clicks on opponent's face-down card
+5. Card flips over (visible only to active player)
+6. Target player receives notification: "Player X looked at your card"
+7. Other players see: "Player X is looking at Player Y's card"
+8. "Done Looking" button appears
+9. Card flips back face-down
+
+**Jack or Queen: Blind Switch**
+1. Player selects "Use Ability"
+2. Card played to discard pile
+3. Prompt: "Select first card to switch (yours or another player's)"
+4. Player clicks any face-down card in game
+5. Prompt: "Select second card to switch"
+6. Player clicks another face-down card
+7. Cards swap positions (both remain face-down)
+8. System shows animation of cards switching
+9. No cards are revealed during this process
+
+**Black King: Look and Switch**
+1. Player selects "Use Ability"
+2. Card played to discard pile
+3. Prompt: "Select any player's card to look at"
+4. Player clicks any face-down card
+5. Card flips over (visible only to active player)
+6. "Done Looking" button appears
+7. After clicking "Done," prompt changes: "Select one of your cards to switch with"
+8. Player clicks one of their own cards
+9. Cards swap positions (both face-down)
+10. Notifications sent to affected players
+
+### 3.5 Sticking Mechanics Flow
+
+**Sticking Your Own Card:**
+1. Card appears on discard pile
+2. 4-second countdown timer starts (visible to all)
+3. Player drags one of their face-down cards toward discard pile
+4. Drop zone highlights when dragging over discard pile
+5. Player releases card on discard pile
+
+   **If Correct Match:**
+   - System validates card matches discard
+   - Success animation plays
+   - Both cards removed from game
+   - Notification: "Player X successfully stuck a card!"
+   - Player now has one fewer card
+
+   **If Incorrect Match:**
+   - System reveals card briefly
+   - Error animation plays
+   - Card returns to player's grid
+   - Penalty card dealt face-down to player's grid
+   - Notification: "Player X stuck incorrectly! Penalty card added."
+
+**Sticking Another Player's Card:**
+1. During 4-second window, any player can drag another player's face-down card
+2. Drag opponent's card to discard pile
+3. Drop to attempt stick
+
+   **If Correct Match:**
+   - System validates match
+   - Success animation
+   - Sticking player chooses one of their own cards
+   - Prompt: "Select one of your cards to give to Player Y"
+   - Selected card transferred to target player's grid
+   - Matched card removed from game
+   - Notification: "Player X stuck Player Y's card and gave them a card!"
+
+   **If Incorrect Match:**
+   - Error animation
+   - Card remains with original player
+   - Sticking player receives penalty card face-down
+   - Notification: "Player X stuck incorrectly! Penalty card added."
+
+**Simultaneous Stick Attempts:**
+- First player to successfully drop card on pile wins
+- Server timestamp determines winner if close
+- Other attempts after first successful stick are ignored
+
+### 3.6 Calling Cambio Flow
+
+1. **Cambio Button**
+   - "Call Cambio" button visible during player's turn
+   - Available before drawing from deck
+
+2. **Cambio Called**
+   - Player clicks "Call Cambio"
+   - Confirmation modal: "Are you sure you want to call Cambio? You cannot play a card this turn."
+   - Options: "Yes, Call Cambio" or "Cancel"
+
+3. **Confirmation**
+   - If confirmed, turn ends immediately
+   - Cannot draw or play cards
+   - System announcement: "Player X has called Cambio!"
+   - Visual indicator shows who called Cambio
+
+4. **Final Round**
+   - Each remaining player gets exactly one more turn
+   - Final turn counter displays: "Final turns remaining: X"
+   - Players can play normally during final turns
+
+5. **Game End Trigger**
+   - After last player completes final turn
+   - All cards flip face-up automatically
+   - Transition to end game screen
+
+### 3.7 End Game Flow
+
+1. **Card Reveal**
+   - All players' cards flip face-up simultaneously
+   - Animated reveal sequence
+
+2. **Score Calculation**
+   - System calculates each player's points:
+     - Number cards: Face value
+     - Ace: 1 point
+     - Face cards (J, Q): 10 points
+     - Red King: -1 point
+     - Black King: 10 points
+     - Joker: 0 points
+
+3. **Scoreboard Display**
+   - Modal/screen showing:
+     - Player rankings (1st, 2nd, 3rd, 4th)
+     - Each player's cards displayed
+     - Point totals beside each player
+     - Winner highlighted
+
+4. **Tie-Breaking**
+   - If tie exists, display tie-breaking rules applied:
+     - Player who didn't call Cambio wins
+     - If both didn't call, player with lower-value individual cards wins
+   - Show tie-breaker explanation
+
+5. **Post-Game Options**
+   - "Play Again" button
+     - Keeps same players in room
+     - Resets game state
+     - Returns to initial memory phase
+   - "Leave Game" button
+     - Returns to landing page
+   - Room code remains active for additional rounds
+
+---
+
+## 4. Detailed Feature Requirements
+
+### 4.1 Room & Lobby System
+
+**FR-1.1: Room Creation**
+- System generates unique alphanumeric room code (format: XXXX-YYYY)
+- Room code must be unique across all active rooms
+- Room code valid for 24 hours or until all players leave
+- Shareable URL format: `app.cambio.com/game/{room-code}`
+
+**FR-1.2: Room Lobby**
+- Display room code prominently
+- "Copy Link" button with copy-to-clipboard functionality
+- Show confirmation when link copied
+- Real-time player list showing:
+  - Player nicknames
+  - Join order
+  - Ready status indicator
+- Maximum 4 players per room
+- "Start Game" button:
+  - Visible only to room creator
+  - Disabled if <2 players
+  - Enabled when ≥2 players present
+
+**FR-1.3: Player Joining**
+- Nickname input modal when joining via link
+- Nickname validation:
+  - 2-15 characters
+  - No duplicate nicknames in same room
+  - Alphanumeric and spaces allowed
+- If room full (4 players), show error: "Room is full"
+- If room doesn't exist, show error: "Room not found"
+
+### 4.2 Game State Management
+
+**FR-2.1: Deck Management**
+- Standard 52-card deck + 2 Jokers (54 cards total)
+- Shuffle algorithm: Fisher-Yates shuffle
+- Deck state synchronized across all clients
+- Discard pile visible to all players
+- Draw pile shows card back and remaining count
+
+**FR-2.2: Card Distribution**
+- Deal 4 cards per player in 2×2 grid layout
+- Cards positioned in quadrants relative to player:
+  - Top-left, Top-right, Bottom-left, Bottom-right
+- Cards dealt face-down
+- Remaining cards form draw pile
+
+**FR-2.3: Turn Management**
+- Random dealer selection at game start
+- Turn order: clockwise from dealer's right
+- Turn order displayed clearly throughout game
+- Active player highlighted with visual indicator
+- Turn timer (optional enhancement): 60 seconds per turn
+
+**FR-2.4: Player State Tracking**
+Each player state includes:
+- Nickname
+- Cards in hand (positions and values)
+- Total point value
+- Whether they called Cambio
+- Penalty count
+- Connection status
+
+### 4.3 Card Interaction System
+
+**FR-3.1: Drawing Cards**
+- Click deck to draw
+- Drawn card appears in private modal/panel
+- Card displayed with value and suit clearly visible
+- Action buttons appear:
+  - "Use Ability" (if special card)
+  - "Swap with Card"
+  - "Discard"
+
+**FR-3.2: Swapping Cards**
+- After drawing, player clicks one of their 4 cards
+- Hover state shows selected card
+- Clicked card swaps with drawn card
+- Old card placed face-up on discard pile
+- New card placed face-down in grid position
+- Animation shows card movement
+
+**FR-3.3: Card Looking Mechanics**
+- Card flips with animation (180° rotation)
+- Card visible only to authorized player
+- "Done Looking" button overlays card
+- Auto-close timer: 30 seconds maximum
+- Other players see generic "looking" indicator
+
+**FR-3.4: Blind Switching**
+- Two-step selection process:
+  - First click: Card highlights, prompt updates
+  - Second click: Switch confirmed, animation plays
+- Cancel option available after first selection
+- Cards switch positions with swap animation
+- Cards remain face-down throughout
+
+### 4.4 Sticking System
+
+**FR-4.1: Sticking Window**
+- 4-second countdown timer
+- Timer starts when card placed on discard pile
+- Timer visible to all players
+- Visual/audio cue when window opens
+- Timer displays seconds remaining (4, 3, 2, 1)
+
+**FR-4.2: Drag and Drop**
+- Players can drag any face-down card (their own or others')
+- Drag preview shows card back
+- Discard pile highlights as valid drop zone
+- Drop triggers stick attempt
+- First successful drop wins if multiple attempts
+
+**FR-4.3: Stick Validation**
+- Server validates card value matches discard
+- Success: Cards removed, player loses one card
+- Failure: Card returns, penalty dealt
+- Validation result shown immediately
+
+**FR-4.4: Penalty Cards**
+- Dealt face-down from deck
+- Added to player's grid (expanded beyond 2×2 if needed)
+- Player cannot look at penalty card when received
+- Notification sent to all players
+
+**FR-4.5: Card Giving (Opponent Stick)**
+- When player successfully sticks opponent's card
+- Modal appears: "Choose a card to give to [Player]"
+- Sticking player clicks one of their own cards
+- Card transferred to opponent's grid
+- Cannot look at card being given
+
+### 4.5 Special Card Abilities
+
+**FR-5.1: Universal Special Card Flow**
+- "Use Ability" button appears for 7, 8, 9, 10, J, Q, Black King
+- Using ability places card on discard immediately
+- Ability must be used before turn ends
+- Only one action per turn (ability OR swap OR discard)
+
+**FR-5.2: 7 or 8 - Look at Own**
+- Selection prompt with clear instructions
+- Can select any of player's face-down cards
+- Card flips temporarily
+- Other players see notification (not card value)
+
+**FR-5.3: 9 or 10 - Look at Opponent's**
+- Selection prompt shows all opponents' cards
+- Hover highlight on opponents' cards
+- Selected card flips for active player only
+- Opponent notified of which card was viewed
+
+**FR-5.4: Jack or Queen - Blind Switch**
+- Two-step selection with clear prompts
+- Can select any two face-down cards (including own)
+- Visual indicator shows "Step 1 of 2" and "Step 2 of 2"
+- Swap animation executes after second selection
+
+**FR-5.5: Black King - Look and Switch**
+- Step 1: Look at any card (same as 9/10 ability)
+- Step 2: After "Done Looking," select own card to switch
+- Two-step prompt clearly indicates workflow
+- Affected players notified
+
+### 4.6 Cambio Calling System
+
+**FR-6.1: Call Cambio Button**
+- Prominent button visible during player's turn
+- Available only at start of turn (before drawing)
+- Positioned near player's action area
+- Distinct styling (e.g., red/orange for urgency)
+
+**FR-6.2: Confirmation Modal**
+- Prevents accidental clicks
+- Modal text: "Are you sure you want to call Cambio? You cannot play a card this turn."
+- Two buttons: "Yes, Call Cambio" and "Cancel"
+- Modal cannot be dismissed by clicking outside
+
+**FR-6.3: Post-Cambio State**
+- Visual indicator: "CAMBIO CALLED BY [PLAYER]"
+- Active player's turn ends immediately
+- Final round counter appears
+- All players notified via notification banner
+
+**FR-6.4: Final Round Mechanics**
+- Each remaining player gets exactly one turn
+- Counter decrements after each turn
+- When counter reaches 0, game ends automatically
+- Players can still stick during final round
+
+### 4.7 Scoring System
+
+**FR-7.1: Point Values**
+- Ace: 1 point
+- 2-10: Face value
+- Jack: 10 points
+- Queen: 10 points
+- King (Red - Hearts/Diamonds): 0 point
+- King (Black - Spades/Clubs): 10 points
+- Joker: -1 points
+
+**FR-7.2: Score Calculation**
+- Automatic calculation at game end
+- Sum all cards in player's grid
+- Display breakdown of each card's value
+
+**FR-7.3: Tie-Breaking Logic**
+```
+IF multiple players have same lowest score:
+  IF one player called Cambio:
+    Other player(s) win
+  ELSE IF multiple non-callers tied:
+    Compare lowest individual card values
+    Player with lower card values wins
+```
+
+**FR-7.4: Winner Determination**
+- Lowest total score wins
+- Apply tie-breaking rules if necessary
+- Winner announcement with visual celebration
+
+### 4.8 Notifications & Feedback
+
+**FR-8.1: Game Events**
+- Player joined/left
+- Turn changes
+- Cambio called
+- Sticking attempts (success/failure)
+- Penalty cards dealt
+- Card lookups by other players
+- Special abilities used
+
+**FR-8.2: Notification Display**
+- Toast notifications in corner
+- Auto-dismiss after 3-5 seconds
+- Non-intrusive positioning
+- Stack multiple notifications
+- Different colors for different event types
+
+**FR-8.3: Visual Indicators**
+- Active turn highlight (border glow)
+- "Looking at card" animation on card
+- Countdown timers
+- Player status badges
+- Connection status indicators
+
+### 4.9 Error Handling & Edge Cases
+
+**FR-9.1: Disconnection Handling**
+- Player disconnects: Game continues without them
+- Disconnected player's cards remain in game
+- Disconnected player's turn auto-skipped after 30 seconds
+- If disconnected player called Cambio, final round proceeds
+- Reconnection allowed within 5 minutes
+
+**FR-9.2: Invalid Actions**
+- Attempting to play out of turn: Show error message
+- Attempting to stick after window closed: No effect
+- Attempting invalid card selection: Highlight valid options
+- Network errors: Show reconnecting indicator
+
+**FR-9.3: Empty Deck**
+- If deck empties, reshuffle discard pile (except top card)
+- Notification: "Deck reshuffled"
+- Maintain top discard card for sticking
+
+**FR-9.4: Room Expiration**
+- Rooms inactive for 24 hours automatically close
+- Warning notification at 23 hours
+- All players redirected to homepage on closure
+
+---
+
+## 5. User Interface Requirements
+
+### 5.1 Layout Structure
+
+**Main Game Screen Layout:**
+```
+┌─────────────────────────────────────────────────────┐
+│  Room Code: ABCD-1234    Turn Order: P1→P2→P3→P4   │
+├─────────────────────────────────────────────────────┤
+│                                                      │
+│          [Opponent 1 Cards]                         │
+│              [□ □]                                  │
+│              [□ □]                                  │
+│                                                      │
+│  [Opp 2]           [DECK] [DISCARD]      [Opp 3]   │
+│   [□ □]            [🂠]   [7♥]           [□ □]     │
+│   [□ □]                                  [□ □]     │
+│                                                      │
+│          [Your Cards]                               │
+│              [□ □]                                  │
+│              [□ □]                                  │
+│                                                      │
+│     [Call Cambio Button]                           │
+└─────────────────────────────────────────────────────┘
+```
+
+**Visual Hierarchy:**
+1. Top bar: Room info and turn order
+2. Center: Game board (deck, discard, all player grids)
+3. Bottom: Current player's cards and actions
+4. Notifications: Top-right corner
+
+### 5.2 Responsive Design
+
+**Desktop Requirements (MVP):**
+- Minimum resolution: 1280x720
+- Optimal resolution: 1920x1080
+- Supports modern browsers (Chrome, Firefox, Safari, Edge)
+- No mobile layout required for MVP
+
+**Future Mobile Considerations:**
+- Touch-friendly drag-and-drop
+- Larger touch targets
+- Portrait and landscape orientations
+- Simplified layout for smaller screens
+
+### 5.3 Visual Design
+
+**Color Scheme:**
+- Primary: Green felt table (card game aesthetic)
+- Secondary: Gold/yellow for highlights
+- Error: Red for penalties/incorrect actions
+- Success: Green for successful sticks
+- Neutral: Gray for inactive elements
+
+**Typography:**
+- Headings: Bold, sans-serif (e.g., Poppins, Inter)
+- Body: Readable sans-serif
+- Card values: Clear, large font
+
+**Card Design:**
+- Standard playing card dimensions (aspect ratio 2.5:3.5)
+- Card backs: Consistent pattern
+- Card faces: Traditional suit symbols
+- Special cards clearly distinguishable
+
+**Animations:**
+- Card flips: 0.3s ease-in-out
+- Card movement: 0.4s smooth transition
+- Stick success: Celebratory animation (0.5s)
+- Stick failure: Shake animation (0.3s)
+- Turn change: Highlight fade-in (0.2s)
+
+### 5.4 Accessibility
+
+**Keyboard Navigation:**
+- Tab through interactive elements
+- Enter to confirm actions
+- Escape to cancel/close modals
+
+**Visual Accessibility:**
+- High contrast mode support
+- Color-blind friendly color choices
+- Text alternatives for icons
+- Minimum font size: 14px
+
+**Screen Reader Support:**
+- Semantic HTML elements
+- ARIA labels for interactive components
+- Announcements for game state changes
+
+---
+
+## 6. Technical Requirements
+
+### 6.1 Performance
+
+**Response Times:**
+- Card draw: <100ms
+- Card swap: <200ms
+- Stick validation: <150ms
+- Turn change: <100ms
+
+**Scalability:**
+- Support 100 concurrent rooms
+- Maximum 4 players per room
+- Efficient WebSocket message handling
+
+**Asset Optimization:**
+- Compressed card images
+- Lazy loading for non-critical assets
+- Minimal bundle size (<500KB initial load)
+
+### 6.2 Data Synchronization
+
+**State Management:**
+- Single source of truth: Server
+- Client-side prediction for UI responsiveness
+- Reconciliation on server response
+- Conflict resolution: Server always wins
+
+**WebSocket Events:**
+```javascript
+// Client → Server
+- JOIN_ROOM
+- START_GAME
+- DRAW_CARD
+- SWAP_CARD
+- USE_ABILITY
+- STICK_CARD
+- CALL_CAMBIO
+- DONE_LOOKING
+
+// Server → Client
+- PLAYER_JOINED
+- PLAYER_LEFT
+- GAME_STARTED
+- CARD_DRAWN
+- TURN_CHANGED
+- CARD_REVEALED
+- STICK_RESULT
+- CAMBIO_CALLED
+- GAME_ENDED
+- ERROR
+```
+
+**Error Recovery:**
+- Automatic reconnection attempts
+- State resynchronization on reconnect
+- Optimistic UI updates with rollback
+
+### 6.3 Security
+
+**Input Validation:**
+- Sanitize all user inputs (nicknames, room codes)
+- Validate all game actions server-side
+- Rate limiting on API endpoints
+
+**Game Integrity:**
+- Server-side game logic
+- No sensitive game state exposed to clients
+- Prevent cheating (card value visibility)
+- Validate turn order and action legality
+
+**Room Security:**
+- Room codes not easily guessable
+- No unauthorized room access
+- Session management for players
+
+### 6.4 Testing Requirements
+
+**Unit Tests:**
+- Game logic functions
+- Card validation
+- Scoring calculations
+- Tie-breaking logic
+
+**Integration Tests:**
+- WebSocket event handling
+- Room creation and joining
+- Game state synchronization
+- Turn progression
+
+**End-to-End Tests:**
+- Full game playthrough
+- Multi-player scenarios
+- Edge cases (disconnections, empty deck)
+- Stick timing and validation
+
+**Test Coverage Goal:** 80% minimum
+
+---
+
+## 7. Non-Functional Requirements
+
+### 7.1 Usability
+- New users should understand basic gameplay within 2 minutes
+- Average turn completion: <30 seconds
+- Intuitive drag-and-drop interface
+- Clear visual feedback for all actions
+
+### 7.2 Reliability
+- 99% uptime during active hours
+- Graceful degradation on connection issues
+- No data loss on server restart (session recovery)
+
+### 7.3 Maintainability
+- Clean, documented code
+- Modular architecture
+- Easy to add new card types or rules
+- Comprehensive logging for debugging
+
+### 7.4 Compatibility
+- Chrome 90+
+- Firefox 88+
+- Safari 14+
+- Edge 90+
+
+---
+
+## 8. Future Enhancements (Post-MVP)
+
+### 8.1 Phase 2 Features
+- Mobile responsive design
+- User accounts and authentication
+- Game history and statistics
+- Player rankings/leaderboards
+- Spectator mode
+- Custom room settings (house rules)
+
+### 8.2 Phase 3 Features
+- AI opponents for single-player practice
+- Tournament mode
+- In-game chat
+- Voice chat integration
+- Custom card deck themes
+- Animations and sound effects library
+
+### 8.3 Monetization (Future)
+- Premium themes and card backs
+- Ad-supported free tier
+- Subscription for advanced features
+
+---
+
+## 9. Success Metrics
+
+### 9.1 Key Performance Indicators (KPIs)
+
+**User Engagement:**
+- Daily active rooms created
+- Average game duration
+- Games completed vs. abandoned
+- Players per room average
+
+**Technical Performance:**
+- Average response time <200ms
+- WebSocket connection stability >99%
+- Error rate <1%
+- Successful stick attempts ratio
+
+**User Satisfaction:**
+- Game completion rate >80%
+- Return player rate (same room, multiple games)
+- User feedback scores
+
+### 9.2 Launch Criteria
+
+**MVP Launch Requirements:**
+- All core features implemented and tested
+- <5 critical bugs
+- Average response time <300ms
+- Successful 4-player game completion
+- Cross-browser compatibility verified
+
+---
+
+## 10. Development Timeline (Estimated)
+
+### Phase 1: Foundation (Weeks 1-2)
+- Setup React frontend and Node.js backend
+- Implement WebSocket infrastructure
+- Basic room creation and joining
+- Lobby system
+
+### Phase 2: Core Game Logic (Weeks 3-4)
+- Card deck management
+- Turn system
+- Basic card drawing and swapping
+- Game state synchronization
+
+### Phase 3: Special Abilities (Week 5)
+- Implement all special card abilities
+- Card looking mechanics
+- Blind switching
+- Look-and-switch logic
+
+### Phase 4: Sticking System (Week 6)
+- Drag-and-drop interface
+- 4-second window timer
+- Stick validation
+- Penalty system
+
+### Phase 5: Cambio & Scoring (Week 7)
+- Call Cambio functionality
+- Final round logic
+- Scoring calculation
+- End game screen
+
+### Phase 6: Polish & Testing (Weeks 8-9)
+- UI/UX refinements
+- Animations and transitions
+- Comprehensive testing
+- Bug fixes
+
+### Phase 7: Launch (Week 10)
+- Deployment
+- Monitoring setup
+- Launch and gather feedback
+
+**Total Estimated Timeline: 10 weeks**
+
+---
+
+## 11. Appendix
+
+### 11.1 Glossary
+
+- **Stick**: Matching a face-down card to the discard pile card
+- **Cambio**: Declaring end of game
+- **Blind Switch**: Swapping cards without seeing them
+- **Penalty Card**: Additional card given for rule violations
+- **Dealer**: Randomly selected starting player
+- **Memory Phase**: Initial period where players view 2 cards
+
+### 11.2 Card Reference
+
+| Card | Points | Special Ability |
+|------|--------|----------------|
+| Ace | 1 | None |
+| 2-6 | Face value | None |
+| 7 | 7 | Look at your own card |
+| 8 | 8 | Look at your own card |
+| 9 | 9 | Look at opponent's card |
+| 10 | 10 | Look at opponent's card |
+| Jack | 10 | Blind switch any 2 cards |
+| Queen | 10 | Blind switch any 2 cards |
+| King (Red) | 0 | None |
+| King (Black) | 10 | Look at any card, then switch with yours |
+| Joker | -1 | None |
+
+---
+
+**Document Version:** 1.0  
+**Last Updated:** September 30, 2025  
+**Status:** Ready for Development

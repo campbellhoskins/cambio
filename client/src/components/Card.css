@@ -1,0 +1,61 @@
+.playing-card {
+  width: 80px;
+  height: 112px;
+  border-radius: 8px;
+  background: white;
+  border: 2px solid #333;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: default;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  position: relative;
+}
+
+.playing-card.clickable {
+  cursor: pointer;
+}
+
+.playing-card.clickable:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+}
+
+.playing-card.dragging {
+  opacity: 0.5;
+}
+
+.playing-card.looking {
+  border: 3px solid #f39c12;
+  box-shadow: 0 0 20px rgba(243, 156, 18, 0.6);
+}
+
+.card-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.card-content.red {
+  color: #e74c3c;
+}
+
+.card-content.black {
+  color: #2c3e50;
+}
+
+.card-value {
+  font-size: 28px;
+  font-weight: 700;
+}
+
+.card-suit {
+  font-size: 32px;
+}
+
+.face-down .card-back-design {
+  font-size: 60px;
+  color: #2c3e50;
+}

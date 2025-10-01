@@ -1,0 +1,46 @@
+.memory-phase-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.memory-phase-modal {
+  background: white;
+  border-radius: 16px;
+  padding: 40px;
+  text-align: center;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+  max-width: 500px;
+}
+
+.memory-phase-modal h2 {
+  font-size: 28px;
+  color: #1e5128;
+  margin-bottom: 10px;
+}
+
+.memory-phase-modal p {
+  font-size: 16px;
+  color: #666;
+  margin-bottom: 30px;
+}
+
+.memory-cards-display {
+  display: flex;
+  gap: 20px;
+  justify-content: center;
+  margin-bottom: 30px;
+}
+
+.done-btn {
+  width: 100%;
+  font-size: 18px;
+  padding: 16px;
+}
