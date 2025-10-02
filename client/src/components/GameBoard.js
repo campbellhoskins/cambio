@@ -22,9 +22,18 @@ function GameBoard({ roomCode }) {
   const [stickingTimeLeft, setStickingTimeLeft] = useState(0);
 
   useEffect(() => {
-    if (!socket) return;
+    if (!socket) {
+      console.log('GameBoard: No socket yet');
+      return;
+    }
+
+    console.log('GameBoard: Socket connected, setting up listeners');
+
+    // Request current game state when component mounts
+    socket.emit('REQUEST_GAME_STATE', { roomCode });
 
     socket.on('GAME_STATE_UPDATE', (state) => {
+      console.log('GameBoard: Received GAME_STATE_UPDATE', state);
       setGameState(state);
       setMyPlayerId(socket.id);
 

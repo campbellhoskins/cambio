@@ -476,6 +476,14 @@ class GameManager {
     return { gameState: this.sanitizeGameState(room.gameState) };
   }
 
+  getGameState(roomCode) {
+    const room = this.rooms.get(roomCode);
+    if (!room || !room.gameState) {
+      return null;
+    }
+    return this.sanitizeGameState(room.gameState);
+  }
+
   handleDisconnect(playerId) {
     const roomCode = this.playerRooms.get(playerId);
     if (roomCode) {

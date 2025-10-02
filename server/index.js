@@ -42,20 +42,35 @@ io.on('connection', (socket) => {
   });
 
   socket.on('START_GAME', ({ roomCode }) => {
+    console.log('START_GAME received for room:', roomCode, 'from:', socket.id);
     const result = gameManager.startGame(roomCode, socket.id);
 
     if (result.error) {
+      console.log('START_GAME error:', result.error);
       socket.emit('ERROR', { message: result.error });
     } else {
+      console.log('Game started successfully, emitting to room:', roomCode);
+      console.log('Game state:', JSON.stringify(result.gameState, null, 2));
+
       io.to(roomCode).emit('GAME_STARTED');
       io.to(roomCode).emit('GAME_STATE_UPDATE', result.gameState);
 
       // Send memory phase to each player
       result.gameState.players.forEach(player => {
+        console.log('Sending MEMORY_PHASE to player:', player.id);
         io.to(player.id).emit('MEMORY_PHASE', {
-          cardIndexes: [0, 1] // Bottom two cards
+          cardIndexes: [2, 3] // Bottom row cards (grid positions: bottom-left, bottom-right)
         });
       });
+    }
+  });
+
+  socket.on('REQUEST_GAME_STATE', ({ roomCode }) => {
+    console.log('REQUEST_GAME_STATE for room:', roomCode, 'from:', socket.id);
+    const gameState = gameManager.getGameState(roomCode);
+    if (gameState) {
+      console.log('Sending game state to:', socket.id);
+      socket.emit('GAME_STATE_UPDATE', gameState);
     }
   });
 
@@ -193,7 +208,7 @@ io.on('connection', (socket) => {
 
       result.gameState.players.forEach(player => {
         io.to(player.id).emit('MEMORY_PHASE', {
-          cardIndexes: [0, 1]
+          cardIndexes: [2, 3] // Bottom row cards
         });
       });
     }

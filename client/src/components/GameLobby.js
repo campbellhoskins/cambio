@@ -15,21 +15,30 @@ function GameLobby() {
   const [error, setError] = useState('');
 
   useEffect(() => {
-    if (!socket) return;
+    if (!socket) {
+      console.log('GameLobby: No socket yet');
+      return;
+    }
+
+    console.log('GameLobby: Setting up socket listeners for room:', roomCode);
 
     socket.on('PLAYER_JOINED', ({ players }) => {
+      console.log('GameLobby: PLAYER_JOINED', players);
       setPlayers(players);
     });
 
     socket.on('PLAYER_LEFT', ({ players }) => {
+      console.log('GameLobby: PLAYER_LEFT', players);
       setPlayers(players);
     });
 
     socket.on('GAME_STARTED', () => {
+      console.log('GameLobby: GAME_STARTED received');
       setGameStarted(true);
     });
 
     socket.on('ERROR', ({ message }) => {
+      console.log('GameLobby: ERROR', message);
       setError(message);
     });
 
@@ -62,6 +71,7 @@ function GameLobby() {
   };
 
   const startGame = () => {
+    console.log('GameLobby: Starting game for room:', roomCode);
     socket.emit('START_GAME', { roomCode });
   };
 

@@ -87,10 +87,10 @@
 }
 
 .player-cards {
-  display: flex;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
   gap: 10px;
-  flex-wrap: wrap;
-  justify-content: center;
+  max-width: 200px;
 }
 
 .center-area {
