@@ -13,6 +13,15 @@
   position: relative;
 }
 
+.playing-card-placeholder {
+  width: 80px;
+  height: 112px;
+  border-radius: 8px;
+  background: transparent;
+  border: 2px dashed rgba(255, 255, 255, 0.3);
+  opacity: 0.5;
+}
+
 .playing-card.clickable {
   cursor: pointer;
 }
@@ -29,6 +38,36 @@
 .playing-card.looking {
   border: 3px solid #f39c12;
   box-shadow: 0 0 20px rgba(243, 156, 18, 0.6);
+}
+
+.playing-card.pulsing {
+  animation: cardPulse 1s infinite;
+}
+
+.playing-card.pulsing-green {
+  animation: cardPulseGreen 1s infinite;
+}
+
+@keyframes cardPulse {
+  0%, 100% {
+    border-color: #f39c12;
+    box-shadow: 0 0 10px rgba(243, 156, 18, 0.5);
+  }
+  50% {
+    border-color: #e67e22;
+    box-shadow: 0 0 20px rgba(243, 156, 18, 0.8);
+  }
+}
+
+@keyframes cardPulseGreen {
+  0%, 100% {
+    border-color: #2ecc71;
+    box-shadow: 0 0 10px rgba(46, 204, 113, 0.5);
+  }
+  50% {
+    border-color: #27ae60;
+    box-shadow: 0 0 20px rgba(46, 204, 113, 0.8);
+  }
 }
 
 .card-content {

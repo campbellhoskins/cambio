@@ -192,29 +192,90 @@
   font-size: 16px;
 }
 
-.sticking-timer {
+.deck.pulsing .card-back {
+  animation: deckPulse 1s infinite;
+}
+
+@keyframes deckPulse {
+  0%, 100% {
+    transform: scale(1);
+    filter: drop-shadow(0 0 10px rgba(243, 156, 18, 0.5));
+  }
+  50% {
+    transform: scale(1.05);
+    filter: drop-shadow(0 0 20px rgba(243, 156, 18, 0.8));
+  }
+}
+
+.turn-prompt {
+  background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+  color: white;
+  padding: 10px 20px;
+  border-radius: 8px;
+  text-align: center;
+  font-weight: 600;
+  font-size: 16px;
+  margin-bottom: 10px;
+}
+
+.swap-prompt {
+  background: #f39c12;
+  color: white;
+  padding: 10px 20px;
+  border-radius: 8px;
+  text-align: center;
+  font-weight: 600;
+  font-size: 14px;
+  margin: 10px 0;
+}
+
+.stack-btn {
+  background: linear-gradient(135deg, #27ae60 0%, #229954 100%);
+  color: white;
+  border: none;
+  padding: 12px 20px;
+  border-radius: 10px;
+  font-size: 18px;
+  font-weight: 900;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  transition: all 0.3s ease;
+  margin-left: 20px;
+}
+
+.stack-btn:hover {
+  transform: scale(1.05);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
+}
+
+.stacking-prompt {
   position: fixed;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
   background: rgba(243, 156, 18, 0.95);
   color: white;
-  padding: 30px 50px;
+  padding: 20px 40px;
   border-radius: 16px;
-  font-size: 36px;
-  font-weight: 900;
+  font-size: 24px;
+  font-weight: 700;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
   z-index: 100;
-  animation: timerPulse 1s infinite;
 }
 
-@keyframes timerPulse {
-  0%, 100% {
-    transform: translate(-50%, -50%) scale(1);
-  }
-  50% {
-    transform: translate(-50%, -50%) scale(1.05);
-  }
+.giving-card-prompt {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(46, 204, 113, 0.95);
+  color: white;
+  padding: 20px 40px;
+  border-radius: 16px;
+  font-size: 24px;
+  font-weight: 700;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  z-index: 100;
 }
 
 .notifications-container {

@@ -1,5 +1,4 @@
 import React from 'react';
-import { useDrag } from 'react-dnd';
 import './Card.css';
 
 const SUITS = {
@@ -9,27 +8,20 @@ const SUITS = {
   spades: '♠'
 };
 
-function Card({ card, faceUp, playerId, cardIndex, onCardClick, onStick, canClick, canStick, isLooking, lookedCard }) {
-  const [{ isDragging }, drag] = useDrag(() => ({
-    type: 'CARD',
-    item: { playerId, cardIndex },
-    canDrag: canStick && !faceUp,
-    collect: (monitor) => ({
-      isDragging: monitor.isDragging()
-    })
-  }), [canStick, faceUp, playerId, cardIndex]);
+function Card({ card, faceUp, playerId, cardIndex, onCardClick, canClick, isPulsing, pulseColor, isLooking, lookedCard }) {
+
+  // Handle null cards (removed/stacked cards - preserve position)
+  if (!card) return <div className="playing-card-placeholder" />;
 
   const displayCard = faceUp ? card : (isLooking && lookedCard ? lookedCard : null);
   const isRed = card && (card.suit === 'hearts' || card.suit === 'diamonds');
 
-  if (!card) return null;
+  const pulseClass = isPulsing ? (pulseColor === 'green' ? 'pulsing-green' : 'pulsing') : '';
 
   return (
     <div
-      ref={drag}
-      className={`playing-card ${faceUp ? 'face-up' : 'face-down'} ${canClick ? 'clickable' : ''} ${isDragging ? 'dragging' : ''} ${isLooking ? 'looking' : ''}`}
+      className={`playing-card ${faceUp ? 'face-up' : 'face-down'} ${canClick ? 'clickable' : ''} ${pulseClass} ${isLooking ? 'looking' : ''}`}
       onClick={onCardClick}
-      style={{ opacity: isDragging ? 0.5 : 1 }}
     >
       {displayCard ? (
         <div className={`card-content ${isRed ? 'red' : 'black'}`}>

@@ -104,13 +104,6 @@ io.on('connection', (socket) => {
         message: `${result.playerNickname} swapped a card`,
         type: 'info'
       });
-
-      // Open sticking window
-      io.to(roomCode).emit('STICKING_WINDOW_OPENED', { timeLeft: 4 });
-
-      setTimeout(() => {
-        io.to(roomCode).emit('STICKING_WINDOW_CLOSED');
-      }, 4000);
     }
   });
 
@@ -126,13 +119,6 @@ io.on('connection', (socket) => {
         message: `${result.playerNickname} discarded`,
         type: 'info'
       });
-
-      // Open sticking window
-      io.to(roomCode).emit('STICKING_WINDOW_OPENED', { timeLeft: 4 });
-
-      setTimeout(() => {
-        io.to(roomCode).emit('STICKING_WINDOW_CLOSED');
-      }, 4000);
     }
   });
 
@@ -156,18 +142,12 @@ io.on('connection', (socket) => {
 
       if (result.turnChanged) {
         io.to(data.roomCode).emit('TURN_CHANGED', { currentTurn: result.gameState.currentTurn });
-
-        // Open sticking window
-        io.to(data.roomCode).emit('STICKING_WINDOW_OPENED', { timeLeft: 4 });
-
-        setTimeout(() => {
-          io.to(data.roomCode).emit('STICKING_WINDOW_CLOSED');
-        }, 4000);
       }
     }
   });
 
   socket.on('STICK_CARD', ({ roomCode, playerId, cardIndex }) => {
+    console.log('STICK_CARD received:', { roomCode, stickingPlayer: socket.id, targetPlayer: playerId, cardIndex });
     const result = gameManager.stickCard(roomCode, socket.id, playerId, cardIndex);
 
     if (result.error) {
@@ -176,9 +156,32 @@ io.on('connection', (socket) => {
       io.to(roomCode).emit('GAME_STATE_UPDATE', result.gameState);
       io.to(roomCode).emit('NOTIFICATION', result.notification);
 
+      if (result.requireCardGive) {
+        console.log('STACK_SUCCESS - Emitting STACK_SUCCESS_GIVE_CARD to:', result.stickingPlayerId);
+        // Notify the sticking player to choose a card to give
+        io.to(result.stickingPlayerId).emit('STACK_SUCCESS_GIVE_CARD', {
+          targetPlayerId: result.targetPlayerId,
+          targetPlayerNickname: result.targetPlayerNickname
+        });
+      }
+
       if (result.gameState.phase === 'ENDED') {
         io.to(roomCode).emit('GAME_ENDED', { finalState: result.gameState });
       }
+    }
+  });
+
+  socket.on('GIVE_CARD_AFTER_STACK', ({ roomCode, targetPlayerId, cardIndex }) => {
+    console.log('GIVE_CARD_AFTER_STACK received:', { roomCode, givingPlayer: socket.id, targetPlayer: targetPlayerId, cardIndex });
+    const result = gameManager.giveCardAfterStack(roomCode, socket.id, targetPlayerId, cardIndex);
+
+    if (result.error) {
+      console.log('GIVE_CARD_AFTER_STACK error:', result.error);
+      socket.emit('ERROR', { message: result.error });
+    } else {
+      console.log('Card successfully given from', socket.id, 'to', targetPlayerId);
+      io.to(roomCode).emit('GAME_STATE_UPDATE', result.gameState);
+      io.to(roomCode).emit('NOTIFICATION', result.notification);
     }
   });
 

@@ -323,11 +323,11 @@ class GameManager {
     if (card.value === topCard.value) {
       // Success!
       if (targetPlayerId === stickingPlayerId) {
-        // Sticking own card
-        targetPlayer.cards.splice(cardIndex, 1);
+        // Sticking own card - replace with null to preserve positions
+        targetPlayer.cards[cardIndex] = null;
 
-        // Check if player won
-        if (targetPlayer.cards.length === 0) {
+        // Check if player won (all cards are null)
+        if (targetPlayer.cards.every(c => c === null)) {
           gameState.phase = 'ENDED';
         }
 
@@ -338,24 +338,36 @@ class GameManager {
             type: 'success'
           }
         };
+
       } else {
-        // Sticking opponent's card - need to give them a card
-        // For simplicity, give them a random card from sticking player
-        if (stickingPlayer.cards.length > 0) {
-          const giveCardIndex = 0; // Give first card
-          const cardToGive = stickingPlayer.cards.splice(giveCardIndex, 1)[0];
-          targetPlayer.cards.push(cardToGive);
+        // Sticking opponent's card - add to discard and replace with null
+        // This position will be filled when the stacking player gives a card
+        const cardCopy = { ...card, faceUp: true };
+        gameState.discardPile.push(cardCopy);
+
+        // CRITICAL: Replace with null immediately to preserve position
+        targetPlayer.cards[cardIndex] = null;
+
+        // Store the card index for later replacement
+        if (!gameState.pendingCardGive) {
+          gameState.pendingCardGive = {};
         }
+        gameState.pendingCardGive = {
+          targetPlayerId,
+          targetCardIndex: cardIndex
+        };
 
-        // Remove matched card
-        targetPlayer.cards.splice(cardIndex, 1);
-
+        console.log(`Opponent card stacked at position ${cardIndex}. Waiting for replacement card.`);
         return {
           gameState: this.sanitizeGameState(gameState),
           notification: {
             message: `${stickingPlayer.nickname} successfully stuck ${targetPlayer.nickname}'s card!`,
             type: 'success'
-          }
+          },
+          requireCardGive: true,
+          stickingPlayerId,
+          targetPlayerId,
+          targetPlayerNickname: targetPlayer.nickname
         };
       }
     } else {
@@ -374,6 +386,61 @@ class GameManager {
         }
       };
     }
+  }
+
+  giveCardAfterStack(roomCode, givingPlayerId, targetPlayerId, cardIndex) {
+    const room = this.rooms.get(roomCode);
+    if (!room || !room.gameState) {
+      return { error: 'Invalid game state' };
+    }
+
+    const gameState = room.gameState;
+    const givingPlayer = gameState.players.find(p => p.id === givingPlayerId);
+    const targetPlayer = gameState.players.find(p => p.id === targetPlayerId);
+
+    if (!givingPlayer || !targetPlayer || !givingPlayer.cards[cardIndex]) {
+      return { error: 'Invalid players or card' };
+    }
+
+    // CRITICAL: Replace card at the EXACT same position to preserve memory mechanic
+    // Get the position where the stacked card was
+    const targetCardIndex = gameState.pendingCardGive?.targetCardIndex;
+
+    if (targetCardIndex === undefined) {
+      return { error: 'No pending card give operation' };
+    }
+
+    console.log('BEFORE card give:');
+    console.log('Giving player cards:', givingPlayer.cards.map((c, i) => `[${i}]: ${c ? c.value + c.suit[0] : 'null'}`));
+    console.log('Target player cards:', targetPlayer.cards.map((c, i) => `[${i}]: ${c ? c.value + c.suit[0] : 'null'}`));
+
+    // Get the card from giving player and replace with null (preserve positions)
+    const cardToGive = givingPlayer.cards[cardIndex];
+    if (!cardToGive) {
+      return { error: 'Card already removed or invalid' };
+    }
+
+    cardToGive.faceUp = false;
+    givingPlayer.cards[cardIndex] = null; // Replace with null, don't splice
+
+    // Replace at EXACT position in target player's hand
+    targetPlayer.cards[targetCardIndex] = cardToGive;
+
+    console.log('AFTER card give:');
+    console.log('Giving player cards:', givingPlayer.cards.map((c, i) => `[${i}]: ${c ? c.value + c.suit[0] : 'null'}`));
+    console.log('Target player cards:', targetPlayer.cards.map((c, i) => `[${i}]: ${c ? c.value + c.suit[0] : 'null'}`));
+    console.log('Array lengths - Giving:', givingPlayer.cards.length, 'Target:', targetPlayer.cards.length);
+
+    // Clear pending operation
+    delete gameState.pendingCardGive;
+
+    return {
+      gameState: this.sanitizeGameState(gameState),
+      notification: {
+        message: `${givingPlayer.nickname} gave a card to ${targetPlayer.nickname}`,
+        type: 'info'
+      }
+    };
   }
 
   callCambio(roomCode, playerId) {

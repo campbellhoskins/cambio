@@ -1,29 +1,34 @@
 import React from 'react';
-import { useDrop } from 'react-dnd';
 import Card from './Card';
 import './DiscardPile.css';
 
-function DiscardPile({ topCard, canDrop, onDrop }) {
-  const [{ isOver }, drop] = useDrop(() => ({
-    accept: 'CARD',
-    drop: (item) => {
-      if (onDrop) {
-        onDrop(item);
-      }
-    },
-    canDrop: () => canDrop,
-    collect: (monitor) => ({
-      isOver: monitor.isOver()
-    })
-  }), [canDrop, onDrop]);
+function DiscardPile({ discardPile }) {
+  if (!discardPile || discardPile.length === 0) {
+    return (
+      <div className="discard-pile">
+        <div className="empty-pile">Discard</div>
+      </div>
+    );
+  }
+
+  // Show the last two cards with an offset
+  const cardsToShow = discardPile.slice(-2);
 
   return (
-    <div ref={drop} className={`discard-pile ${canDrop ? 'can-drop' : ''} ${isOver ? 'is-over' : ''}`}>
-      {topCard ? (
-        <Card card={topCard} faceUp={true} />
-      ) : (
-        <div className="empty-pile">Discard</div>
-      )}
+    <div className="discard-pile">
+      {cardsToShow.map((card, idx) => (
+        <div
+          key={idx}
+          className="discard-card-wrapper"
+          style={{
+            position: idx === 0 && cardsToShow.length > 1 ? 'absolute' : 'relative',
+            transform: idx === 0 && cardsToShow.length > 1 ? 'translate(-10px, -10px)' : 'none',
+            zIndex: idx
+          }}
+        >
+          <Card card={card} faceUp={true} />
+        </div>
+      ))}
     </div>
   );
 }

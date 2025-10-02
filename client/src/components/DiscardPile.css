@@ -1,24 +1,36 @@
 .discard-pile {
-  width: 80px;
-  height: 112px;
+  width: 100px;
+  height: 130px;
   border-radius: 8px;
   border: 2px dashed #666;
   display: flex;
   align-items: center;
   justify-content: center;
+  position: relative;
   transition: all 0.3s ease;
 }
 
-.discard-pile.can-drop {
-  border-color: #f39c12;
-  border-width: 3px;
-  border-style: solid;
-  background: rgba(243, 156, 18, 0.1);
+.discard-card-wrapper {
+  transition: all 0.5s ease;
 }
 
-.discard-pile.is-over {
-  background: rgba(243, 156, 18, 0.3);
-  transform: scale(1.1);
+.discard-card-wrapper.floating {
+  animation: floatToDiscard 0.8s ease-out;
+}
+
+@keyframes floatToDiscard {
+  0% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.2);
+    opacity: 0.8;
+  }
+  100% {
+    transform: translate(-10px, -10px);
+    opacity: 1;
+  }
 }
 
 .empty-pile {
