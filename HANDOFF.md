@@ -86,16 +86,17 @@ and reconcile the code, rather than assuming the code is correct.
 
 ## Publishing this handoff
 
-The repository was initialized on branch `main` with the repository-local identity
-`Campbell Hoskins <campbellhoskins@gmail.com>`. Git identity configuration is local
-metadata and is not committed. No GitHub remote is configured by this handoff.
-
-After creating an empty repository under the personal GitHub account:
+This handoff is published separately from the existing application on the personal
+repository's `main` branch. The existing history is intentionally not merged,
+rewritten, or force-pushed.
 
 ```powershell
-git remote add origin 'https://github.com/<personal-github-username>/cambio.git'
-git push -u origin main
+git clone --branch greenfield-implementation-handoff `
+  'https://github.com/campbellhoskins/cambio.git'
+Set-Location '.\cambio'
 ```
 
-Push authentication is separate from commit identity. Authenticate Git Credential
-Manager or GitHub CLI with the personal account before pushing.
+The handoff commit uses `Campbell Hoskins <campbellhoskins@gmail.com>`. Git identity
+configuration is local metadata and must still be set in a new clone. Push
+authentication is separate from commit identity; authenticate Git Credential Manager
+or GitHub CLI with the personal account before pushing future changes.
