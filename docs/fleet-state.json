@@ -1,0 +1,458 @@
+{
+  "schemaVersion": 1,
+  "capturedAt": "2026-08-27",
+  "statuses": {
+    "done": [
+      "cambio-foundation",
+      "cambio-foundation-docs",
+      "cambio-foundation-tooling"
+    ],
+    "pending": [
+      "cambio-transition-contract",
+      "cambio-core-engine",
+      "cambio-concurrency-engine",
+      "cambio-protocol-privacy",
+      "cambio-realtime-server",
+      "cambio-persistence",
+      "cambio-web-lobby",
+      "cambio-web-table",
+      "cambio-presentation",
+      "cambio-tutorial",
+      "cambio-release-hardening"
+    ],
+    "in_progress": [],
+    "blocked": []
+  },
+  "authority": [
+    "HANDOFF.md",
+    "AGENTS.md",
+    "README.md",
+    "docs/architecture.md",
+    "docs/rules.md",
+    "docs/transition-contract.md",
+    "docs/protocol.md",
+    "docs/implementation-plan.md",
+    "docs/fleet-workstreams.md",
+    "docs/runbook.md"
+  ],
+  "sourceState": {
+    "repositoryStatus": "Foundation scaffolding and package skeletons exist; feature implementation is not validated.",
+    "engineImplementationNote": "packages/engine/src/model/*, deck.ts, random.ts, scoring.ts, and index.ts are partial unvalidated implementation, not a completed phase.",
+    "dependencyInstallation": "Not installed or run as part of this handoff."
+  },
+  "todos": [
+    {
+      "id": "cambio-foundation",
+      "title": "Establishing repository foundation",
+      "status": "done",
+      "description": "Implement plan Phase 0: initialize the repository and create the pnpm/Turborepo workspace, strict TypeScript, quality tooling, package skeletons, and baseline documentation.",
+      "dependencies": [
+        "cambio-foundation-docs",
+        "cambio-foundation-tooling"
+      ],
+      "ownership": {
+        "scope": "Repository-wide foundation integration",
+        "paths": [
+          "package.json",
+          "pnpm-workspace.yaml",
+          "turbo.json",
+          "tsconfig*.json",
+          "apps/",
+          "packages/",
+          "docs/",
+          "AGENTS.md",
+          "README.md"
+        ],
+        "recommendedAgentType": "general-purpose"
+      },
+      "exitCriteria": [
+        "Workspace structure and package boundaries match the architecture documentation.",
+        "Strict TypeScript and quality-tooling configuration is present.",
+        "Baseline documentation describes the intended implementation contract."
+      ],
+      "resumeNotes": [
+        "Treat this as complete foundation work, not evidence that feature behavior is implemented.",
+        "Do not install dependencies or infer runtime behavior from scaffolding alone."
+      ]
+    },
+    {
+      "id": "cambio-foundation-docs",
+      "title": "Documenting architecture and rules",
+      "status": "done",
+      "description": "Create README, AGENTS guidance, architecture, canonical rules, and executable transition-contract documentation for the greenfield workspace.",
+      "dependencies": [],
+      "ownership": {
+        "scope": "Repository contract documentation",
+        "paths": [
+          "README.md",
+          "AGENTS.md",
+          "docs/architecture.md",
+          "docs/rules.md",
+          "docs/transition-contract.md",
+          "docs/protocol.md",
+          "docs/runbook.md"
+        ],
+        "recommendedAgentType": "code-architect"
+      },
+      "exitCriteria": [
+        "Architecture, rules, protocol, transition, and runbook documents are present.",
+        "Package boundaries, authority, privacy, timer, and persistence rules are explicit.",
+        "The transition contract enumerates commands, timers, rejection codes, and visibility."
+      ],
+      "resumeNotes": [
+        "These documents are the authority for implementation decisions.",
+        "Update the relevant contract in the same change as any command, timer, or wire behavior change."
+      ]
+    },
+    {
+      "id": "cambio-foundation-tooling",
+      "title": "Scaffolding workspace tooling",
+      "status": "done",
+      "description": "Create root workspace configuration, package manifests, TypeScript configs, lint/format/test/build configuration, and package entry points without installing dependencies.",
+      "dependencies": [],
+      "ownership": {
+        "scope": "Workspace configuration and package entry points",
+        "paths": [
+          "package.json",
+          "pnpm-workspace.yaml",
+          "turbo.json",
+          "tsconfig.base.json",
+          "tsconfig.json",
+          "eslint.config.mjs",
+          "vitest.workspace.ts",
+          "apps/*/package.json",
+          "packages/*/package.json"
+        ],
+        "recommendedAgentType": "task"
+      },
+      "exitCriteria": [
+        "Workspace manifests and project references are coherent.",
+        "Build, lint, format, typecheck, test, integration, and e2e entry points are declared.",
+        "No dependency installation is claimed until it is run on the implementation device."
+      ],
+      "resumeNotes": [
+        "Use the pinned Node and pnpm versions from docs/runbook.md on the personal device.",
+        "Run baseline checks only after installing dependencies there."
+      ]
+    },
+    {
+      "id": "cambio-transition-contract",
+      "title": "Defining executable rule contract",
+      "status": "pending",
+      "description": "Implement plan Phase 1: define canonical domain types, deterministic clock/RNG, card/deck/setup foundations, invariants, and the command/timer transition contract.",
+      "dependencies": [
+        "cambio-foundation"
+      ],
+      "ownership": {
+        "scope": "Framework-free deterministic engine and contract alignment",
+        "paths": [
+          "packages/engine/",
+          "docs/transition-contract.md",
+          "docs/rules.md"
+        ],
+        "recommendedAgentType": "general-purpose"
+      },
+      "exitCriteria": [
+        "Canonical state, identifiers, cards, deck/setup, clock/RNG, and invariant APIs are implemented.",
+        "Reducer transitions cover the Phase 1 contract without I/O or wall-clock reads.",
+        "Engine tests prove deterministic setup, card conservation, and contract rejection behavior.",
+        "The partial files under packages/engine/src are reviewed and validated rather than assumed complete."
+      ],
+      "resumeNotes": [
+        "packages/engine/src/model/*, deck.ts, random.ts, scoring.ts, and index.ts are partial unvalidated implementation, not a completed phase.",
+        "Preserve server authority, stable slots, seeded randomness, and the exact rules in docs/rules.md."
+      ]
+    },
+    {
+      "id": "cambio-core-engine",
+      "title": "Building core turn engine",
+      "status": "pending",
+      "description": "Implement plan Phase 2: build normal turns, Cambio final-turn queues, dealer rotation, reshuffling, end reasons, scoring, and cumulative standings.",
+      "dependencies": [
+        "cambio-transition-contract"
+      ],
+      "ownership": {
+        "scope": "Engine normal turns, Cambio flow, round ends, and scoring",
+        "paths": [
+          "packages/engine/",
+          "packages/testkit/",
+          "docs/transition-contract.md"
+        ],
+        "recommendedAgentType": "general-purpose"
+      },
+      "exitCriteria": [
+        "Normal draw, replace, discard, turn advancement, Cambio queues, and dealer rotation are deterministic.",
+        "Stock reshuffle and every round-end reason follow the documented safe behavior.",
+        "Scoring and cumulative standings cover ties and caller adjustments.",
+        "Focused unit, property, and invariant tests pass."
+      ],
+      "resumeNotes": [
+        "Do not implement powers, snaps, or server transport in this workstream.",
+        "Keep all state transitions pure and preserve the transition-contract rejection semantics."
+      ]
+    },
+    {
+      "id": "cambio-concurrency-engine",
+      "title": "Building power and snap engine",
+      "status": "pending",
+      "description": "Implement plan Phase 3: build optional powers, snap races and penalties, opponent transfers, concurrent completion gates, timer generations, and deterministic removal.",
+      "dependencies": [
+        "cambio-core-engine"
+      ],
+      "ownership": {
+        "scope": "Engine powers, snaps, transfers, gates, timers, and removal effects",
+        "paths": [
+          "packages/engine/",
+          "packages/testkit/",
+          "docs/rules.md",
+          "docs/transition-contract.md"
+        ],
+        "recommendedAgentType": "general-purpose"
+      },
+      "exitCriteria": [
+        "All optional power stages, invalidation/reselection, and private reveal lifecycles are modeled.",
+        "Snap receive ordering, stale windows, wrong-snap penalties, successful snaps, and transfers are atomic.",
+        "Concurrent power/snap obligations and timer generations gate the next turn correctly.",
+        "Race, conservation, removal, and stock-exhaustion tests pass."
+      ],
+      "resumeNotes": [
+        "A successful snap never triggers a power or opens another window.",
+        "Do not expose hidden card identities through engine events or client-facing structures."
+      ]
+    },
+    {
+      "id": "cambio-protocol-privacy",
+      "title": "Defining protocol and privacy projections",
+      "status": "pending",
+      "description": "Implement plan Phase 4: create versioned Zod wire contracts, server mapping, per-viewer projections, public logs, fixtures, and automated privacy assertions.",
+      "dependencies": [
+        "cambio-concurrency-engine"
+      ],
+      "ownership": {
+        "scope": "Versioned external DTOs and viewer-safe projection boundary",
+        "paths": [
+          "packages/protocol/",
+          "apps/server/",
+          "packages/testkit/",
+          "docs/protocol.md"
+        ],
+        "recommendedAgentType": "general-purpose"
+      },
+      "exitCriteria": [
+        "Every command, message, view, and stable rejection code has a versioned schema.",
+        "One projection boundary produces viewer-safe snapshots, events, and logs.",
+        "Private reveals, hidden cards, credentials, and transient ranks are excluded from unauthorized views.",
+        "Schema fixtures and privacy assertions pass for every seat perspective."
+      ],
+      "resumeNotes": [
+        "Protocol contains DTOs and validation, not game rule logic.",
+        "Never send raw domain events, reconnect secrets, buried discard ranks, or another player's private cards."
+      ]
+    },
+    {
+      "id": "cambio-realtime-server",
+      "title": "Building real-time room server",
+      "status": "pending",
+      "description": "Implement plan Phase 5: build Fastify/WebSocket room actors, lobby lifecycle, guest sessions, host migration, command authorization, idempotency, timers, and broadcasts.",
+      "dependencies": [
+        "cambio-protocol-privacy"
+      ],
+      "ownership": {
+        "scope": "Server-authoritative room actors and WebSocket lifecycle",
+        "paths": [
+          "apps/server/",
+          "packages/protocol/",
+          "packages/engine/",
+          "docs/architecture.md",
+          "docs/transition-contract.md"
+        ],
+        "recommendedAgentType": "general-purpose"
+      },
+      "exitCriteria": [
+        "Room creation, join, resume, lobby configuration, start, commands, disconnects, and host migration are serialized per room.",
+        "Session generations, command idempotency, authorization, timer generations, and pause behavior are enforced.",
+        "Persistence is invoked before in-memory publication and broadcasts use viewer-safe projections.",
+        "Server integration tests cover multi-client lifecycle and stale-command behavior."
+      ],
+      "resumeNotes": [
+        "The actor queue is the serialization boundary; socket callbacks must not mutate state directly.",
+        "Persistence details remain in the persistence workstream, but server interfaces must support them."
+      ]
+    },
+    {
+      "id": "cambio-persistence",
+      "title": "Adding persistence and recovery",
+      "status": "pending",
+      "description": "Implement plan Phase 6: add SQLite migrations and repositories, transactional persist-before-publish, crash recovery, timer recovery policy, and 24-hour cleanup.",
+      "dependencies": [
+        "cambio-realtime-server"
+      ],
+      "ownership": {
+        "scope": "SQLite schema, repositories, transactions, recovery, and retention",
+        "paths": [
+          "apps/server/",
+          "docs/architecture.md",
+          "docs/runbook.md"
+        ],
+        "recommendedAgentType": "general-purpose"
+      },
+      "exitCriteria": [
+        "Rooms, seats/sessions, snapshots, domain events, command receipts, and timers have migrations and repositories.",
+        "State, events, receipts, and timer rows commit atomically before broadcasts.",
+        "Restart recovery pauses rooms, refreshes generations/grace, and applies documented snap-window policy.",
+        "Idempotency survives restart and empty-room retention cleanup is race-safe and tested."
+      ],
+      "resumeNotes": [
+        "Use SQLite WAL mode and the documented transactional ordering.",
+        "Do not persist private projection data or reconnect secrets in clear text."
+      ]
+    },
+    {
+      "id": "cambio-web-lobby",
+      "title": "Building web session and lobby",
+      "status": "pending",
+      "description": "Implement plan Phase 7: build React routing, connection/state management, create/join/resume flows, host configuration, room sharing, and accessible lobby UI.",
+      "dependencies": [
+        "cambio-protocol-privacy"
+      ],
+      "ownership": {
+        "scope": "React routing, connection state, session recovery, and lobby UX",
+        "paths": [
+          "apps/web/",
+          "packages/ui/",
+          "packages/protocol/"
+        ],
+        "recommendedAgentType": "general-purpose"
+      },
+      "exitCriteria": [
+        "Create, join, resume, reconnect, and lobby configuration flows consume only protocol views.",
+        "Host and player states, errors, stale revisions, and connection transitions are accessible.",
+        "Room sharing never includes reconnect credentials.",
+        "Browser tests cover lobby and session journeys at responsive sizes."
+      ],
+      "resumeNotes": [
+        "The web client never predicts authoritative rules or evaluates hidden state.",
+        "Keep online play separate from the dynamically loaded tutorial route."
+      ]
+    },
+    {
+      "id": "cambio-web-table",
+      "title": "Building accessible game table",
+      "status": "pending",
+      "description": "Implement plan Phase 8: build responsive table rendering and every authoritative turn, power, snap, transfer, pause, removal, ready-up, and result interaction.",
+      "dependencies": [
+        "cambio-realtime-server",
+        "cambio-web-lobby"
+      ],
+      "ownership": {
+        "scope": "Authoritative game-table rendering and interactions",
+        "paths": [
+          "apps/web/",
+          "packages/ui/",
+          "packages/protocol/"
+        ],
+        "recommendedAgentType": "general-purpose"
+      },
+      "exitCriteria": [
+        "Every legal server-described action has an accessible interaction and clear rejection handling.",
+        "Responsive stable-slot semantics, hidden-card placeholders, timers, pauses, history, scores, and results render correctly.",
+        "Power reveals and transient snap presentation events are shown only to entitled viewers.",
+        "Browser and accessibility tests cover complete turn, snap, transfer, pause, removal, and result flows."
+      ],
+      "resumeNotes": [
+        "Never infer legality or card rank from layout, identifiers, or client state.",
+        "Use protocol view data and server legal-action hints only for UX."
+      ]
+    },
+    {
+      "id": "cambio-presentation",
+      "title": "Adding presentation effects and history",
+      "status": "pending",
+      "description": "Implement plan Phase 9: add non-blocking card animations, sound controls, rank-safe action history, reduced-motion behavior, and effect backlog handling.",
+      "dependencies": [
+        "cambio-web-table"
+      ],
+      "ownership": {
+        "scope": "Non-authoritative effects, sound, history presentation, and motion preferences",
+        "paths": [
+          "apps/web/",
+          "packages/ui/"
+        ],
+        "recommendedAgentType": "general-purpose"
+      },
+      "exitCriteria": [
+        "Effects never delay or mutate authoritative state transitions.",
+        "Action history remains rank-safe and transient reveals are not logged.",
+        "Sound controls, reduced-motion behavior, and backlog handling are accessible and bounded.",
+        "Browser and accessibility checks cover effects during rapid event sequences."
+      ],
+      "resumeNotes": [
+        "Presentation is downstream of the table and cannot introduce online game rules.",
+        "Prefer deterministic cleanup when messages arrive faster than animations complete."
+      ]
+    },
+    {
+      "id": "cambio-tutorial",
+      "title": "Building rules and tutorial",
+      "status": "pending",
+      "description": "Implement plan Phase 10: add the exact rules reference and dynamically loaded offline guided tutorial covering every required mechanic.",
+      "dependencies": [
+        "cambio-concurrency-engine",
+        "cambio-web-table"
+      ],
+      "ownership": {
+        "scope": "Rules reference and offline guided tutorial",
+        "paths": [
+          "packages/tutorial/",
+          "packages/ui/",
+          "packages/protocol/",
+          "packages/engine/",
+          "apps/web/"
+        ],
+        "recommendedAgentType": "general-purpose"
+      },
+      "exitCriteria": [
+        "Tutorial is dynamically loaded at /tutorial and remains offline without connecting to a room.",
+        "Guided scenarios cover setup, turns, powers, snaps, penalties, transfers, Cambio, scoring, and lifecycle concepts.",
+        "Rules reference matches docs/rules.md and uses the same authoritative engine behavior.",
+        "Tutorial and accessibility tests pass without bundling online server behavior into the main path."
+      ],
+      "resumeNotes": [
+        "The tutorial is the only client-bundled use of engine and must use an isolated adapter.",
+        "Do not invent alternate rules or presets."
+      ]
+    },
+    {
+      "id": "cambio-release-hardening",
+      "title": "Hardening the local release",
+      "status": "pending",
+      "description": "Implement plan Phase 11: add multi-client E2E, race/recovery/privacy/accessibility/soak coverage, production-like local serving, and final operating documentation.",
+      "dependencies": [
+        "cambio-persistence",
+        "cambio-presentation",
+        "cambio-tutorial"
+      ],
+      "ownership": {
+        "scope": "Release validation, hardening, local operations, and final documentation",
+        "paths": [
+          "e2e/",
+          "apps/server/",
+          "apps/web/",
+          "packages/",
+          "docs/runbook.md"
+        ],
+        "recommendedAgentType": "general-purpose"
+      },
+      "exitCriteria": [
+        "Multi-client journeys, races, recovery, privacy, accessibility, and soak scenarios pass.",
+        "Production-like local build and start paths are verified from a clean installed workspace.",
+        "No hidden-card, timer, persistence, or authority regressions remain.",
+        "Operating documentation records verified commands and known limitations."
+      ],
+      "resumeNotes": [
+        "Run the full validation matrix only after all three dependencies are done.",
+        "A passing build does not replace rule, privacy, race, recovery, and accessibility coverage."
+      ]
+    }
+  ]
+}
