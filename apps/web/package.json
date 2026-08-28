@@ -10,13 +10,15 @@
     "lint": "eslint src",
     "typecheck": "tsc -p tsconfig.json",
     "test": "vitest run --environment jsdom --dir src",
-    "e2e": "playwright test"
+    "e2e": "pnpm --dir ../.. --filter @cambio/ui build && pnpm build && playwright test"
   },
   "dependencies": {
     "@cambio/protocol": "workspace:*",
     "@cambio/ui": "workspace:*",
     "react": "^19.1.1",
-    "react-dom": "^19.1.1"
+    "react-dom": "^19.1.1",
+    "react-router-dom": "^7.18.2",
+    "zustand": "^5.0.15"
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.10.2",

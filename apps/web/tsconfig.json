@@ -7,7 +7,12 @@
       "vite/client"
     ],
     "rootDir": ".",
-    "tsBuildInfoFile": "node_modules/.cache/tsconfig.tsbuildinfo"
+    "tsBuildInfoFile": "node_modules/.cache/tsconfig.tsbuildinfo",
+    "lib": [
+      "ES2022",
+      "DOM",
+      "DOM.Iterable"
+    ]
   },
   "include": [
     "src/**/*.ts",
