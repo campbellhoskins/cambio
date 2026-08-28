@@ -42,6 +42,16 @@ describe("game table", () => {
     expect(onCommand).toHaveBeenCalledWith("acknowledgeOpeningPeek", {});
   });
 
+  it("opens the in-game rules panel during play", async () => {
+    const user = userEvent.setup();
+    renderTable(makeGameView({ legalActions: ["drawCard", "callCambio"], turnStage: "turnStart" }));
+
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Rules" }));
+    expect(screen.getByRole("dialog", { name: "How to play Cambio" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Snapping" })).toBeInTheDocument();
+  });
+
   it("enables only legal turn-start actions", async () => {
     const user = userEvent.setup();
     const onCommand = vi.fn();

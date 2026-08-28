@@ -759,6 +759,46 @@ code {
   background: #0b1a2d;
 }
 
+.rules-content {
+  display: grid;
+  gap: 20px;
+}
+.rules-objective {
+  font-size: 1.05rem;
+}
+.rules-search {
+  display: grid;
+  gap: 8px;
+}
+.rules-sections {
+  display: grid;
+  gap: 20px;
+}
+.rules-section h3 {
+  margin: 0 0 6px;
+}
+.rules-subsection {
+  margin-top: 12px;
+  padding-left: 14px;
+  border-left: 3px solid var(--color-border);
+}
+.rules-subsection h4 {
+  margin: 0 0 4px;
+}
+.rules-example-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+}
+.rules-example__scores {
+  font-weight: 600;
+}
+.rules-dialog-body {
+  max-height: min(70vh, 640px);
+  overflow-y: auto;
+  padding-right: 6px;
+}
+
 .tutorial-nav ol {
   display: grid;
   gap: 10px;

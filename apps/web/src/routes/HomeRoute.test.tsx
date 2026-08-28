@@ -54,6 +54,18 @@ describe("home route", () => {
     expect(screen.getByRole("button", { name: "Resume room ABCD12 as Alice" })).toBeInTheDocument();
     expect(document.body).not.toHaveTextContent(retained.reconnectSecret);
   });
+
+  it("opens the human-readable rules panel from the start screen", async () => {
+    const user = userEvent.setup();
+    renderHome(new MockProtocolAdapter(), createMemoryStorage());
+
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "How to play" }));
+
+    const dialog = screen.getByRole("dialog", { name: "How to play Cambio" });
+    expect(dialog).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Snapping" })).toBeInTheDocument();
+  });
 });
 
 function renderHome(adapter: ProtocolAdapter, storage: ReturnType<typeof createMemoryStorage>): void {

@@ -1,7 +1,7 @@
 import { useMemo, useState, type FormEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { ROOM_CONFIG_LIMITS, RoomConfigSchema } from "@cambio/protocol";
-import { Button, FieldError, LiveRegion, NumberField, TextField } from "@cambio/ui";
+import { Button, FieldError, LiveRegion, NumberField, RulesLauncher, TextField } from "@cambio/ui";
 import { useGameStore } from "../store/gameStore.js";
 import type { PublicSessionDescriptor } from "../session/credentials.js";
 
@@ -91,6 +91,7 @@ export function HomeRoute(): React.ReactElement {
         <h1 id="home-title">Play Cambio</h1>
         <p>Create a room, share only the room code, and resume later from this browser.</p>
         <nav aria-label="Support links" className="link-row">
+          <RulesLauncher label="How to play" />
           <Link to="/rules">Rules reference</Link>
           <Link to="/tutorial">Guided tutorial</Link>
         </nav>

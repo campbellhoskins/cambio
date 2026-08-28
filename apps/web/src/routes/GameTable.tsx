@@ -16,6 +16,7 @@ import {
   LiveRegion,
   PileSummary,
   PublicActionLog,
+  RulesLauncher,
   Scoreboard,
   formatCard,
   slotPositionLabel,
@@ -189,6 +190,9 @@ export function GameTable({
         <span className={`connection-pill connection-pill--${connectionStatus}`}>
           {connectionStatus}
         </span>
+        <div className="room-header__actions no-print">
+          <RulesLauncher label="Rules" />
+        </div>
       </header>
 
       {snapshot.pauseReasons.length === 0 ? null : (
