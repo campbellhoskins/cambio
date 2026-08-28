@@ -42,9 +42,15 @@ noted otherwise.
 
 ## Local data and configuration
 
-- The server persists to a local SQLite database file (WAL mode). Expect a local,
-  git-ignored data directory once `apps/server` implements persistence; do not commit
-  database files.
+- The server uses the in-memory repository unless `CAMBIO_SQLITE_PATH` is set or the app
+  factory receives a SQLite path.
+- `CAMBIO_SQLITE_PATH` points at the local SQLite database file. If SQLite is selected
+  without a path, the server uses `apps/server/data/cambio.sqlite` from the repository
+  root.
+- SQLite runs in WAL mode. Expect `*.sqlite`, `*.sqlite-wal`, and `*.sqlite-shm` files in
+  the same directory.
+- `apps/server/data/` and SQLite sidecar files are git-ignored. Do not commit database
+  files or copied local data.
 - Copy `.env.example` to `.env` for local server configuration. Replace
   `CAMBIO_SESSION_SECRET` with a locally generated secret before starting the server.
   No cloud configuration is required; this release targets local-only operation.

@@ -150,17 +150,21 @@ After an unexpected server restart:
 
 ## Persistence design
 
-- `apps/server` depends on a persistence port. Phase 5 ships the in-memory adapter; the
-  SQLite/Drizzle adapter is a Phase 6 replacement behind the same interface.
-- SQLite in WAL mode via `better-sqlite3` and Drizzle-managed migrations.
-- Tables/records: rooms, seats/sessions, snapshots, domain events, command receipts, and
-  timers.
+- `apps/server` depends on a stable persistence port. The in-memory adapter is used by
+  default; `SqliteRoomRepository` is selected by `CAMBIO_SQLITE_PATH` or app options.
+- SQLite runs in WAL mode via `better-sqlite3`; startup applies idempotent Drizzle-schema
+  migrations and enables foreign keys, `NORMAL` synchronous mode, and a busy timeout.
+- Tables: rooms, sessions, snapshots, domain events, command receipts, and timers.
+- Snapshots store the authoritative `MatchState` JSON exactly as server-only state.
+- Room deletion removes the room row and cascades sessions, snapshots, events, receipts,
+  and timers.
 - The actor persists before it publishes: state is committed in one transaction before
   any broadcast, and in-memory state updates only after commit succeeds.
 - Command receipts back the idempotency check described in Actor design, including across
   a restart.
 - Retention: rooms with no connected player are deleted 24 hours after becoming empty.
-  Deletion is serialized against join/resume at the registry level.
+  The durable `emptyRoomTtl` timer preserves the original due time across repository or
+  process restarts. Deletion is serialized against join/resume at the registry level.
 
 ## Projection and privacy design
 

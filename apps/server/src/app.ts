@@ -5,6 +5,7 @@ import type { RoomConfig } from "@cambio/engine";
 import { PlayerIdSchema } from "@cambio/protocol";
 import { RoomConfigSchema } from "@cambio/protocol";
 import { InMemoryRoomRepository, type RoomRepository } from "./persistence.js";
+import { SqliteRoomRepository } from "./sqlite-repository.js";
 import { FakeClock, SystemClock, TimeoutScheduler, type Clock, type Scheduler } from "./clock.js";
 import { RoomRegistry } from "./registry.js";
 import type { SeatController } from "./actor.js";
@@ -22,6 +23,7 @@ const ResumeBodySchema = z.object({
 
 export interface CreateCambioServerOptions {
   readonly repository?: RoomRepository;
+  readonly sqlite?: boolean | { readonly path?: string };
   readonly clock?: Clock;
   readonly scheduler?: Scheduler;
   readonly allowedOrigins?: readonly string[];
@@ -38,7 +40,7 @@ export interface CambioServer {
 export async function createCambioServer(options: CreateCambioServerOptions = {}): Promise<CambioServer> {
   const clock = options.clock ?? new SystemClock();
   const scheduler = options.scheduler ?? (clock instanceof FakeClock ? clock : new TimeoutScheduler());
-  const repository = options.repository ?? new InMemoryRoomRepository();
+  const repository = options.repository ?? createRepository(options.sqlite);
   const registry = new RoomRegistry({ repository, clock, scheduler });
   const app = Fastify({
     logger: false,
@@ -50,6 +52,11 @@ export async function createCambioServer(options: CreateCambioServerOptions = {}
     options: {
       maxPayload: options.maxPayloadBytes ?? 16_384,
     },
+  });
+  app.addHook("onClose", async () => {
+    if (repository instanceof SqliteRoomRepository) {
+      repository.close();
+    }
   });
 
   app.addHook("onRequest", async (request, reply) => {
@@ -188,6 +195,16 @@ export async function createCambioServer(options: CreateCambioServerOptions = {}
   });
 
   return { app, registry, repository, clock };
+}
+
+function createRepository(sqlite: CreateCambioServerOptions["sqlite"]): RoomRepository {
+  if (sqlite !== undefined || process.env.CAMBIO_SQLITE_PATH !== undefined) {
+    return new SqliteRoomRepository(
+      typeof sqlite === "object" && sqlite.path !== undefined ? { path: sqlite.path } : {},
+    );
+  }
+
+  return new InMemoryRoomRepository();
 }
 
 function originAllowed(origin: string | undefined, allowedOrigins: ReadonlySet<string>): boolean {

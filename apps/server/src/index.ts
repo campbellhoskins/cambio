@@ -6,3 +6,4 @@ export * from "./persistence.js";
 export * from "./projection/index.js";
 export * from "./registry.js";
 export * from "./sessions.js";
+export * from "./sqlite-repository.js";
