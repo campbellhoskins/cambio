@@ -105,6 +105,9 @@ importers:
       '@cambio/protocol':
         specifier: workspace:*
         version: link:../../packages/protocol
+      '@cambio/tutorial':
+        specifier: workspace:*
+        version: link:../../packages/tutorial
       '@cambio/ui':
         specifier: workspace:*
         version: link:../../packages/ui

@@ -1,12 +1,20 @@
+import { Suspense, lazy } from "react";
 import { createBrowserRouter, Navigate, RouterProvider } from "react-router-dom";
 import { HomeRoute } from "../routes/HomeRoute.js";
 import { RoomRoute } from "../routes/RoomRoute.js";
 
+const RulesRoute = lazy(() =>
+  import("@cambio/tutorial/rules").then((module) => ({ default: module.RulesRoute })),
+);
+const TutorialRoute = lazy(() =>
+  import("@cambio/tutorial").then((module) => ({ default: module.TutorialRoute })),
+);
+
 const router = createBrowserRouter([
   { path: "/", element: <HomeRoute /> },
   { path: "/room/:code", element: <RoomRoute /> },
-  { path: "/rules", element: <Placeholder title="Rules reference" /> },
-  { path: "/tutorial", element: <Placeholder title="Tutorial" /> },
+  { path: "/rules", element: <LazyRoute><RulesRoute /></LazyRoute> },
+  { path: "/tutorial", element: <LazyRoute><TutorialRoute /></LazyRoute> },
   { path: "*", element: <Navigate to="/" replace /> },
 ]);
 
@@ -14,15 +22,6 @@ export function App(): React.ReactElement {
   return <RouterProvider router={router} />;
 }
 
-function Placeholder({ title }: { readonly title: string }): React.ReactElement {
-  return (
-    <main className="app-shell" id="main-content">
-      <section className="hero panel">
-        <p className="eyebrow">Coming soon</p>
-        <h1>{title}</h1>
-        <p>This route is reserved for a later phase.</p>
-        <a className="text-link" href="/">Return home</a>
-      </section>
-    </main>
-  );
+function LazyRoute({ children }: { readonly children: React.ReactElement }): React.ReactElement {
+  return <Suspense fallback={<main className="app-shell" id="main-content"><p>Loading…</p></main>}>{children}</Suspense>;
 }

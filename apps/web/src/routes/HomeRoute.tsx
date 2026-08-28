@@ -91,8 +91,8 @@ export function HomeRoute(): React.ReactElement {
         <h1 id="home-title">Play Cambio</h1>
         <p>Create a room, share only the room code, and resume later from this browser.</p>
         <nav aria-label="Support links" className="link-row">
-          <Link to="/rules">Rules placeholder</Link>
-          <Link to="/tutorial">Tutorial placeholder</Link>
+          <Link to="/rules">Rules reference</Link>
+          <Link to="/tutorial">Guided tutorial</Link>
         </nav>
       </section>
 

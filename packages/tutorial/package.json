@@ -12,6 +12,10 @@
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
+    },
+    "./rules": {
+      "types": "./dist/rules.d.ts",
+      "import": "./dist/rules.js"
     }
   },
   "scripts": {
@@ -19,7 +23,7 @@
     "build": "tsc -p tsconfig.build.json",
     "lint": "eslint src",
     "typecheck": "tsc -p tsconfig.json",
-    "test": "vitest run --dir src"
+    "test": "vitest run --coverage --dir src"
   },
   "dependencies": {
     "@cambio/engine": "workspace:*",

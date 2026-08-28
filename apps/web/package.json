@@ -10,10 +10,11 @@
     "lint": "eslint src",
     "typecheck": "tsc -p tsconfig.json",
     "test": "vitest run --environment jsdom --dir src",
-    "e2e": "pnpm --dir ../.. --filter @cambio/ui build && pnpm build && playwright test"
+    "e2e": "pnpm --dir ../.. exec turbo run build --filter=@cambio/web && playwright test"
   },
   "dependencies": {
     "@cambio/protocol": "workspace:*",
+    "@cambio/tutorial": "workspace:*",
     "@cambio/ui": "workspace:*",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",

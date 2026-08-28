@@ -725,3 +725,90 @@ code {
     min-width: 72px;
   }
 }
+
+.rules-route,
+.tutorial-route {
+  display: grid;
+  gap: 24px;
+}
+
+.rules-grid,
+.tutorial-layout {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 20px;
+}
+
+.rules-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.rules-table th,
+.rules-table td {
+  border: 1px solid var(--color-border);
+  padding: 12px;
+  text-align: left;
+  vertical-align: top;
+}
+
+.rules-example {
+  border: 1px solid var(--color-border);
+  border-radius: 18px;
+  padding: 16px;
+  background: #0b1a2d;
+}
+
+.tutorial-nav ol {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding-left: 22px;
+}
+
+.tutorial-nav .ui-button {
+  width: 100%;
+  justify-content: center;
+}
+
+.coach-panel,
+.tutorial-table {
+  display: grid;
+  gap: 16px;
+}
+
+.tutorial-table__status {
+  display: flex;
+  justify-content: space-between;
+  align-items: start;
+  gap: 16px;
+}
+
+.rules-route ul,
+.coach-panel p {
+  line-height: 1.6;
+}
+
+@media print {
+  body {
+    background: white;
+    color: black;
+  }
+
+  .app-shell {
+    width: 100%;
+    padding: 0;
+  }
+
+  .panel,
+  .ui-card {
+    border-color: #888;
+    box-shadow: none;
+    break-inside: avoid;
+  }
+
+  .no-print,
+  .no-print * {
+    display: none !important;
+  }
+}
