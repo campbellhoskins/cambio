@@ -25,7 +25,10 @@ export function calculateRawScores(
   eligiblePlayerIds: readonly PlayerId[],
 ): Readonly<Record<PlayerId, number>> {
   return Object.fromEntries(
-    eligiblePlayerIds.map((playerId) => [playerId, calculateRawScore(slotsByPlayer[playerId] ?? [], cards)]),
+    eligiblePlayerIds.map((playerId) => [
+      playerId,
+      calculateRawScore(slotsByPlayer[playerId] ?? [], cards),
+    ]),
   );
 }
 
@@ -47,6 +50,10 @@ export function scoreRound(
   return eligiblePlayerIds.map((playerId) => {
     const rawScore = rawScores[playerId]!;
     let matchPoints = rawScore;
+
+    if (endReason === "hostEnded" || endReason === "insufficientPlayers") {
+      matchPoints = 0;
+    }
 
     if (endReason === "cambio" && playerId === callerId) {
       if (lowestPlayers.length === 1 && lowestPlayers[0] === callerId) {
