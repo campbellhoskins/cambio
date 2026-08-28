@@ -318,6 +318,35 @@ export interface StartMatchCommand {
   readonly actorId: PlayerId;
 }
 
+export interface JoinRoomCommand {
+  readonly type: "joinRoom";
+  readonly seat: CreateSeatInput;
+}
+
+export interface UpdateRoomConfigCommand {
+  readonly type: "updateRoomConfig";
+  readonly actorId: PlayerId;
+  readonly config: Partial<RoomConfig>;
+}
+
+export interface LeaveRoomCommand {
+  readonly type: "leaveRoom";
+  readonly actorId: PlayerId;
+}
+
+export interface RemovePlayerCommand {
+  readonly type: "removePlayer";
+  readonly actorId: PlayerId;
+  readonly targetPlayerId: PlayerId;
+  readonly expectedRevision?: number;
+}
+
+export interface HostEndMatchCommand {
+  readonly type: "hostEndMatch";
+  readonly actorId: PlayerId;
+  readonly expectedRevision?: number;
+}
+
 export interface AcknowledgeOpeningPeekCommand {
   readonly type: "acknowledgeOpeningPeek";
   readonly actorId: PlayerId;
@@ -415,7 +444,12 @@ export interface ExpireSnapWindowCommand {
 
 export type EngineCommand =
   | CreateMatchCommand
+  | JoinRoomCommand
+  | UpdateRoomConfigCommand
+  | LeaveRoomCommand
   | StartMatchCommand
+  | RemovePlayerCommand
+  | HostEndMatchCommand
   | AcknowledgeOpeningPeekCommand
   | DrawCardCommand
   | ReplaceSlotCommand
@@ -497,8 +531,18 @@ export function reduceCommand(state: MatchState | null, command: EngineCommand):
   }
 
   switch (command.type) {
+    case "joinRoom":
+      return joinRoom(state, command);
+    case "updateRoomConfig":
+      return updateRoomConfig(state, command);
+    case "leaveRoom":
+      return leaveRoom(state, command);
     case "startMatch":
       return startMatch(state, command);
+    case "removePlayer":
+      return hostRemovePlayer(state, command);
+    case "hostEndMatch":
+      return hostEndMatch(state, command);
     case "acknowledgeOpeningPeek":
       return acknowledgeOpeningPeek(state, command);
     case "drawCard":
@@ -530,6 +574,93 @@ export function reduceCommand(state: MatchState | null, command: EngineCommand):
   }
 }
 
+export function joinRoom(state: MatchState, command: JoinRoomCommand): TransitionResult {
+  if (state.status !== "lobby") {
+    return reject(state, "E_ROOM_STARTED");
+  }
+
+  if (activeSeats(state.seats).length >= state.config.playerCap) {
+    return reject(state, "E_ROOM_FULL");
+  }
+
+  const seatIndex = nextSeatIndex(state.seats);
+  const seat = {
+    ...createSeat(command.seat, seatIndex),
+    joinOrder: nextJoinOrder(state.seats),
+  };
+  return accept(
+    {
+      ...state,
+      revision: state.revision + 1,
+      hostPlayerId: state.hostPlayerId ?? seat.playerId,
+      seats: [...state.seats, seat],
+      cumulativeScores: {
+        ...state.cumulativeScores,
+        [seat.playerId]: state.cumulativeScores[seat.playerId] ?? 0,
+      },
+    },
+    [],
+  );
+}
+
+export function updateRoomConfig(
+  state: MatchState,
+  command: UpdateRoomConfigCommand,
+): TransitionResult {
+  if (state.hostPlayerId !== command.actorId) {
+    return reject(state, "E_NOT_HOST");
+  }
+
+  if (state.status !== "lobby") {
+    return reject(state, "E_OUT_OF_PHASE");
+  }
+
+  const configResult = validateRoomConfig({ ...state.config, ...command.config });
+  if (!configResult.ok || configResult.config.playerCap < activeSeats(state.seats).length) {
+    return reject(state, "E_INVALID_CONFIG");
+  }
+
+  return accept(
+    {
+      ...state,
+      revision: state.revision + 1,
+      config: configResult.config,
+    },
+    [],
+  );
+}
+
+export function leaveRoom(state: MatchState, command: LeaveRoomCommand): TransitionResult {
+  if (state.status !== "lobby") {
+    return reject(state, "E_OUT_OF_PHASE");
+  }
+
+  const seat = state.seats.find((candidate) => candidate.playerId === command.actorId);
+  if (seat === undefined || seat.connection === "removed" || seat.withdrawn) {
+    return reject(state, "E_ALREADY_REMOVED");
+  }
+
+  const seats = state.seats.filter((candidate) => candidate.playerId !== command.actorId);
+  const hostPlayerId =
+    state.hostPlayerId === command.actorId
+      ? (activeSeats(seats)[0]?.playerId ?? null)
+      : state.hostPlayerId;
+  const cumulativeScores = Object.fromEntries(
+    Object.entries(state.cumulativeScores).filter(([playerId]) => playerId !== command.actorId),
+  );
+
+  return accept(
+    {
+      ...state,
+      revision: state.revision + 1,
+      hostPlayerId,
+      seats,
+      cumulativeScores,
+    },
+    [],
+  );
+}
+
 export function startMatch(state: MatchState, command: StartMatchCommand): TransitionResult {
   if (state.status !== "lobby") {
     return reject(state, state.status === "active" ? "E_ALREADY_STARTED" : "E_OUT_OF_PHASE");
@@ -550,6 +681,50 @@ export function startMatch(state: MatchState, command: StartMatchCommand): Trans
   });
 
   return accept(dealt.state, [dealt.event]);
+}
+
+export function hostRemovePlayer(state: MatchState, command: RemovePlayerCommand): TransitionResult {
+  if (command.expectedRevision !== undefined && command.expectedRevision !== state.revision) {
+    return reject(state, "E_STALE_REVISION");
+  }
+
+  if (state.hostPlayerId !== command.actorId) {
+    return reject(state, "E_NOT_HOST");
+  }
+
+  const targetSeat = state.seats.find((seat) => seat.playerId === command.targetPlayerId);
+  if (targetSeat === undefined || targetSeat.connection === "removed" || targetSeat.withdrawn) {
+    return reject(state, "E_ALREADY_REMOVED");
+  }
+
+  if (targetSeat.connection !== "disconnected" || !targetSeat.removalEligible) {
+    return reject(state, "E_NOT_REMOVAL_ELIGIBLE");
+  }
+
+  return removePlayer(state, command.targetPlayerId);
+}
+
+export function hostEndMatch(state: MatchState, command: HostEndMatchCommand): TransitionResult {
+  if (command.expectedRevision !== undefined && command.expectedRevision !== state.revision) {
+    return reject(state, "E_STALE_REVISION");
+  }
+
+  if (state.hostPlayerId !== command.actorId) {
+    return reject(state, "E_NOT_HOST");
+  }
+
+  if (state.status !== "active") {
+    return reject(state, "E_OUT_OF_PHASE");
+  }
+
+  const abandoned = abandonMatch(state, "hostEnded");
+  return accept(
+    {
+      ...abandoned.state,
+      revision: state.revision + 1,
+    },
+    abandoned.events,
+  );
 }
 
 export function acknowledgeOpeningPeek(
@@ -1903,6 +2078,14 @@ function createSeat(input: CreateSeatInput, seatIndex: number): SeatState {
     removalEligible: false,
     withdrawn: false,
   };
+}
+
+function nextSeatIndex(seats: readonly SeatState[]): number {
+  return seats.reduce((max, seat) => Math.max(max, seat.seatIndex), -1) + 1;
+}
+
+function nextJoinOrder(seats: readonly SeatState[]): number {
+  return seats.reduce((max, seat) => Math.max(max, seat.joinOrder), -1) + 1;
 }
 
 function createStartingSlots(playerId: PlayerId, cardIds: readonly CardId[]): readonly CardSlot[] {

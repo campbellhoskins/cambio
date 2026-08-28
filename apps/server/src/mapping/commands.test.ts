@@ -21,6 +21,10 @@ const engineBacked = [
   ["attemptSnap", undefined, { snapWindowId: "window:1:1", generation: 1, targetPlayerId: "bob", slotId: "slot:bob:starting:topLeft" }, { type: "attemptSnap", actorId: "alice", windowId: "window:1:1", generation: 1, targetPlayerId: "bob", slotId: "slot:bob:starting:topLeft" }],
   ["chooseTransferTarget", 2, { slotId: "slot:alice:starting:bottomLeft" }, { type: "chooseTransferTarget", actorId: "alice", slotId: "slot:alice:starting:bottomLeft", expectedRevision: 2 }],
   ["hostRemovePlayer", 2, { targetPlayerId: "bob" }, { type: "removePlayer", actorId: "alice", targetPlayerId: "bob", expectedRevision: 2 }],
+  ["joinRoom", undefined, { roomCode: "ABCD", displayName: "Bob" }, { type: "joinRoom", seat: { playerId: "alice", displayName: "Bob" } }],
+  ["updateRoomConfig", undefined, { config: { playerCap: 4 } }, { type: "updateRoomConfig", actorId: "alice", config: { playerCap: 4 } }],
+  ["leaveRoom", undefined, {}, { type: "leaveRoom", actorId: "alice" }],
+  ["hostEndMatch", 2, {}, { type: "hostEndMatch", actorId: "alice", expectedRevision: 2 }],
 ] as const;
 
 describe("protocol command mapping", () => {
@@ -35,9 +39,9 @@ describe("protocol command mapping", () => {
     }
   });
 
-  it("returns explicit unsupported markers for Phase 5 lobby/session commands", () => {
-    for (const type of ["createRoom", "joinRoom", "updateRoomConfig", "resumeSession", "leaveRoom", "hostEndMatch"] as const) {
-      const decoded = decodeEnvelope(envelope(type, type === "hostEndMatch" ? 1 : undefined, payloadFor(type)));
+  it("returns explicit unsupported markers for server-orchestrated commands", () => {
+    for (const type of ["createRoom", "resumeSession"] as const) {
+      const decoded = decodeEnvelope(envelope(type, undefined, payloadFor(type)));
       expect("ok" in decoded).toBe(false);
       if ("ok" in decoded) {
         throw new Error(decoded.message);

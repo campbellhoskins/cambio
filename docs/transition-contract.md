@@ -65,11 +65,11 @@ mutation, rejection codes, and visibility. Prose rules are in
 | Command | Phase | Actor | Preconditions | Mutation | Rejection | Visibility |
 |---|---|---|---|---|---|---|
 | `createRoom` | n/a (registry) | any guest | config within limits (players 2-6, rounds 1-20 default 9, snap 2-10s default 5) | Creates room row, seat 0 as host, `status=lobby`, issues reconnect secret | `E_INVALID_CONFIG` | Creator receives room code/link and session credential; nothing broadcast |
-| `joinRoom` | `lobby` | any guest | room exists, not started, seat count < cap | Adds seat with next `joinOrder`, issues reconnect secret | `E_ROOM_NOT_FOUND`, `E_ROOM_STARTED`, `E_ROOM_FULL` | Broadcasts updated roster to room; new seat gets full lobby view + credential |
-| `updateRoomConfig` | `lobby` | host | new values within limits | Updates `config` (roundCount/snapWindowMs/playerCap) | `E_NOT_HOST`, `E_OUT_OF_PHASE`, `E_INVALID_CONFIG` | Broadcasts updated config to room |
+| `joinRoom` | `lobby` | any guest | room exists, not started, non-removed seat count < cap | Pure reducer adds a connected seat with next stable `seatIndex` and `joinOrder`; server issues reconnect secret | `E_ROOM_NOT_FOUND`, `E_ROOM_STARTED`, `E_ROOM_FULL` | Broadcasts updated roster to room; new seat gets full lobby view + credential |
+| `updateRoomConfig` | `lobby` | host | new values within limits and `playerCap >= current non-removed seat count` | Pure reducer updates `config` (roundCount/snapWindowMs/playerCap) | `E_NOT_HOST`, `E_OUT_OF_PHASE`, `E_INVALID_CONFIG` | Broadcasts updated config to room |
 | `startMatch` | `lobby` | host | >= 2 seats present | Sets `status=active`; deals round 1 (see `dealCards` below) | `E_NOT_HOST`, `E_MIN_PLAYERS`, `E_ALREADY_STARTED` | Broadcasts match start + per-viewer opening deal view |
 | `resumeSession` | any | seated player (via credential) | valid, non-expired reconnect secret; seat not `removed` | Rotates reconnect secret, increments `sessionGeneration`, revokes prior socket for the seat, sets `connection=connected`, clears blocking pause reason if last one | `E_CREDENTIAL_INVALID`, `E_ALREADY_REMOVED` | Resuming client receives full `stateSnapshot`; room broadcasts presence update |
-| `leaveRoom` | `lobby` | seated player | seat present | Removes seat from lobby roster; invalidates its credential | `E_OUT_OF_PHASE` (leaving mid-match is disconnect, not this command) | Broadcasts updated roster |
+| `leaveRoom` | `lobby` | seated player | seat present | Pure reducer removes seat from lobby roster, removes its score row, and migrates host to the first remaining active seat; server invalidates its credential | `E_OUT_OF_PHASE` (leaving mid-match is disconnect, not this command), `E_ALREADY_REMOVED` | Broadcasts updated roster |
 
 ## Round setup commands
 
@@ -112,8 +112,8 @@ pending-power obligation (only the power's `ownerId` may act on it), unless note
 
 | Command | Phase | Actor | Preconditions | Mutation | Rejection | Visibility |
 |---|---|---|---|---|---|---|
-| `hostRemovePlayer` | any active/paused | host | target `connection=disconnected` and `removalEligible=true` | Runs the full deterministic removal transition (seat marked `removed`; cards moved to `outOfPlay`; pending power/snap/transfer/final-turn/dealer/active-player/pause effects resolved per `rules.md`; ends round if caller or drops below 2 players) | `E_NOT_HOST`, `E_NOT_REMOVAL_ELIGIBLE`, `E_ALREADY_REMOVED` | Broadcasts removal, updated roster, out-of-play count only (no ranks); possible round-end broadcast |
-| `hostEndMatch` | any active/paused | host | match `status=active` | Abandons current round (`endReason=hostEnded`, no scores added), retains completed-round standings, sets `status=abandoned`, stops timers | `E_NOT_HOST`, `E_OUT_OF_PHASE` | Broadcasts match end with final standings from completed rounds only |
+| `hostRemovePlayer` | any active/paused | host | target `connection=disconnected` and `removalEligible=true` | Pure reducer runs the full deterministic removal transition (seat marked `removed`; cards moved to `outOfPlay`; pending power/snap/transfer/final-turn/dealer/active-player/pause effects resolved per `rules.md`; ends round if caller or drops below 2 players) | `E_NOT_HOST`, `E_NOT_REMOVAL_ELIGIBLE`, `E_ALREADY_REMOVED`, `E_STALE_REVISION` | Broadcasts removal, updated roster, out-of-play count only (no ranks); possible round-end broadcast |
+| `hostEndMatch` | any active/paused | host | match `status=active` | Pure reducer abandons current round (`endReason=hostEnded`, no scores added), retains completed-round standings, sets `status=abandoned`, stops snap timers | `E_NOT_HOST`, `E_OUT_OF_PHASE`, `E_STALE_REVISION` | Broadcasts match end with final standings from completed rounds only |
 
 ## Internal timers and system events
 

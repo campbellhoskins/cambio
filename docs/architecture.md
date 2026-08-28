@@ -150,8 +150,11 @@ After an unexpected server restart:
 
 ## Persistence design
 
+- `apps/server` depends on a persistence port. Phase 5 ships the in-memory adapter; the
+  SQLite/Drizzle adapter is a Phase 6 replacement behind the same interface.
 - SQLite in WAL mode via `better-sqlite3` and Drizzle-managed migrations.
-- Tables: rooms, seats/sessions, snapshots, domain events, command receipts, and timers.
+- Tables/records: rooms, seats/sessions, snapshots, domain events, command receipts, and
+  timers.
 - The actor persists before it publishes: state is committed in one transaction before
   any broadcast, and in-memory state updates only after commit succeeds.
 - Command receipts back the idempotency check described in Actor design, including across

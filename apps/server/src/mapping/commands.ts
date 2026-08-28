@@ -1,4 +1,4 @@
-import type { EngineCommand, PlayerId } from "@cambio/engine";
+import type { EngineCommand, PlayerId, RoomConfig } from "@cambio/engine";
 import {
   ValidatedCommandEnvelopeSchema,
   checkProtocolVersion,
@@ -13,15 +13,7 @@ export interface UnsupportedProtocolCommand {
   readonly unsupported: true;
   readonly type: CommandType;
 }
-
-export interface RemovePlayerEngineCommand {
-  readonly type: "removePlayer";
-  readonly actorId: PlayerId;
-  readonly targetPlayerId: PlayerId;
-  readonly expectedRevision: number;
-}
-
-export type MappedEngineCommand = EngineCommand | RemovePlayerEngineCommand;
+export type MappedEngineCommand = EngineCommand;
 
 export function decodeEnvelope(raw: unknown): ValidatedCommandEnvelope | ProtocolError {
   const versionResult = checkProtocolVersion(raw);
@@ -78,13 +70,25 @@ export function mapProtocolCommandToEngineCommand(
       return { type: "chooseTransferTarget", actorId: authenticatedSeatId, slotId: envelope.payload.slotId, expectedRevision: envelope.expectedRevision };
     case "hostRemovePlayer":
       return { type: "removePlayer", actorId: authenticatedSeatId, targetPlayerId: envelope.payload.targetPlayerId, expectedRevision: envelope.expectedRevision };
-    case "createRoom":
     case "joinRoom":
+      return { type: "joinRoom", seat: { playerId: authenticatedSeatId, displayName: envelope.payload.displayName } };
     case "updateRoomConfig":
-    case "resumeSession":
+      return { type: "updateRoomConfig", actorId: authenticatedSeatId, config: definedConfig(envelope.payload.config) };
     case "leaveRoom":
+      return { type: "leaveRoom", actorId: authenticatedSeatId };
     case "hostEndMatch":
+      return { type: "hostEndMatch", actorId: authenticatedSeatId, expectedRevision: envelope.expectedRevision };
+    case "createRoom":
+    case "resumeSession":
       return { unsupported: true, type: envelope.type };
+  }
+
+  function definedConfig(config: { readonly roundCount?: number | undefined; readonly snapWindowMs?: number | undefined; readonly playerCap?: number | undefined }): Partial<RoomConfig> {
+    return {
+      ...(config.roundCount === undefined ? {} : { roundCount: config.roundCount }),
+      ...(config.snapWindowMs === undefined ? {} : { snapWindowMs: config.snapWindowMs }),
+      ...(config.playerCap === undefined ? {} : { playerCap: config.playerCap }),
+    };
   }
 }
 
