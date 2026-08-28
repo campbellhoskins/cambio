@@ -46,7 +46,7 @@ export class RealProtocolAdapter implements ProtocolAdapter {
 
     const open = (): void => {
       writeWebSocketAuthCookies(credential);
-      const next = new WebSocket(this.websocketUrl(credential.roomCode));
+      const next = new WebSocket(this.websocketUrl(credential.roomCode), webSocketAuthProtocol(credential));
       socket = next;
       next.addEventListener("open", () => handlers.onOpen());
       next.addEventListener("close", (event) => {
@@ -54,10 +54,8 @@ export class RealProtocolAdapter implements ProtocolAdapter {
           return;
         }
         if (closed) {
-          clearWebSocketAuthCookies(credential.roomCode);
           return;
         }
-        clearWebSocketAuthCookies(credential.roomCode);
         handlers.onClose(event.reason || `closed ${event.code}`);
       });
       next.addEventListener("error", () => handlers.onError("Unable to connect to the room socket."));
@@ -156,7 +154,19 @@ export function clearWebSocketAuthCookies(roomCode?: string): void {
 }
 
 function writeCookie(name: string, value: string, path: string): void {
-  document.cookie = `${name}=${encodeURIComponent(value)}; Path=${path}; SameSite=Strict`;
+  document.cookie = `${name}=${encodeURIComponent(value)}; Max-Age=10; Path=${path}; SameSite=Strict`;
+}
+
+function webSocketAuthProtocol(credential: SessionCredential): string {
+  return `cambio.auth.${base64UrlEncode(JSON.stringify({
+    seatId: credential.seatId,
+    sessionGeneration: credential.sessionGeneration,
+    reconnectSecret: credential.reconnectSecret,
+  }))}`;
+}
+
+function base64UrlEncode(value: string): string {
+  return btoa(value).replaceAll("+", "-").replaceAll("/", "_").replace(/=+$/, "");
 }
 
 function isCredentialResponse(value: unknown): value is CredentialResponse {

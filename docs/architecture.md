@@ -189,15 +189,20 @@ After an unexpected server restart:
 
 - Reconnect secrets are 256-bit, generated with cryptographic randomness, stored on the
   server only as a keyed digest, compared in constant time, and rotated on each resume
-  together with an incremented session generation. A new controller for a seat revokes
-  and closes the previous socket.
+  together with an incremented session generation. The local server uses
+  `CAMBIO_SESSION_SECRET` or a local-only development key so retained sessions remain
+  verifiable after a process restart. A new controller for a seat revokes and closes the
+  previous socket.
 - Every command is bound to the current room, seat, and session generation; a removed or
   stale controller cannot send commands.
 - Join/resume endpoints use generic errors, frame-size limits, origin checks, and
   separate rate limits for commands, joins, and snaps.
 - Display names are validated and normalized; all user text renders as text, never HTML.
-- Same-origin HTTP/WebSocket locally, a strict CSP, security headers, and an exact
-  development-origin allowlist.
+- The local production-like server serves `apps/web/dist`, HTTP APIs, and WebSockets from
+  one origin. Browser WebSocket authentication uses a `cambio.auth.*` subprotocol plus
+  short-lived scoped cookies; Node integration tests may use the equivalent explicit
+  headers. Static responses include a strict local CSP, security headers, and an exact
+  local-origin allowlist.
 - Structured logs redact tokens and any payload field containing private card ranks.
 - SQLite files use restrictive permissions where supported; retention-expired rows are
   deleted.

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { readFileSync, readdirSync } from "node:fs";
-import { join, resolve } from "node:path";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 import { StateSnapshotViewSchema } from "@cambio/protocol";
 import { COACH_ID, LEARNER_ID, projectTutorialSnapshot } from "./adapter.js";
 import {
@@ -116,7 +117,7 @@ describe("tutorial scenarios", () => {
   });
 
   it("does not include socket or fetch networking in tutorial sources", () => {
-    const sourceDir = resolve("src");
+    const sourceDir = dirname(fileURLToPath(import.meta.url));
     const contents = readdirSync(sourceDir)
       .filter((name) => name.endsWith(".ts") || name.endsWith(".tsx"))
       .map((name) => readFileSync(join(sourceDir, name), "utf8"))

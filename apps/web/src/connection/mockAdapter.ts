@@ -602,5 +602,8 @@ function legalActionsFor(view: StateSnapshotView, viewerSeatId: string): StateSn
   if (viewer?.isHost === true && view.seats.some((seat) => seat.removalEligible)) {
     legal.add("hostRemovePlayer");
   }
+  if (viewer?.isHost === true && view.room.status === "active") {
+    legal.add("hostEndMatch");
+  }
   return [...legal];
 }

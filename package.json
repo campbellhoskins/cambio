@@ -9,16 +9,18 @@
   "scripts": {
     "dev": "turbo run dev --parallel",
     "build": "turbo run build",
-    "start": "turbo run start",
+    "start": "pnpm build && pnpm --filter @cambio/server start",
     "lint": "turbo run lint",
     "typecheck": "turbo run typecheck",
     "test": "vitest run --workspace vitest.workspace.ts",
     "integration": "turbo run integration",
-    "e2e": "turbo run e2e",
+    "e2e": "playwright test -c e2e/playwright.config.ts && pnpm --filter @cambio/web e2e",
+    "soak": "pnpm --filter @cambio/server soak",
     "format": "prettier --write .",
     "format:check": "prettier --check ."
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.10.2",
     "@eslint/js": "^9.35.0",
     "@playwright/test": "^1.55.0",
     "@types/node": "^22.15.0",

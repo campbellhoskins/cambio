@@ -1,10 +1,11 @@
 import { readFileSync } from "node:fs";
-import { resolve } from "node:path";
+import { dirname, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import { rulesReference, searchRules } from "./rulesReference.js";
 
 describe("rules reference", () => {
-  const docs = readFileSync(resolve("../../docs/rules.md"), "utf8");
+  const docs = readFileSync(resolve(dirname(fileURLToPath(import.meta.url)), "../../../docs/rules.md"), "utf8");
 
   it("keeps the card values and powers aligned with docs/rules.md", () => {
     for (const rule of rulesReference.cardRules) {

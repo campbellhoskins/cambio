@@ -24,11 +24,11 @@ describe("projection branch coverage", () => {
     expect(projectStateSnapshot(scoring, "alice").legalActions).toContain("readyForNextRound");
 
     const paused: MatchState = { ...active, pauseReasons: ["bob"], seats: active.seats.map((seat) => seat.playerId === "bob" ? { ...seat, removalEligible: true } : seat) };
-    expect(projectStateSnapshot(paused, "alice").legalActions).toEqual(["hostRemovePlayer"]);
+    expect(projectStateSnapshot(paused, "alice").legalActions).toEqual(["hostRemovePlayer", "hostEndMatch"]);
 
     let drawn = createStateForTesting({ activePlayerId: "alice", grids: baseGrids, drawPile: ["clubs:J"] });
     drawn = accept(drawCard(drawn, { type: "drawCard", actorId: "alice", expectedRevision: drawn.revision })).state;
-    expect(projectStateSnapshot(drawn, "alice").legalActions).toEqual(["replaceSlot", "discardDrawn"]);
+    expect(projectStateSnapshot(drawn, "alice").legalActions).toEqual(["hostEndMatch", "replaceSlot", "discardDrawn"]);
     drawn = accept(discardDrawn(drawn, { type: "discardDrawn", actorId: "alice", expectedRevision: drawn.revision })).state;
     expect(projectStateSnapshot(drawn, "alice").legalActions).toContain("attemptSnap");
     expect(projectStateSnapshot(drawn, "alice").legalActions).toContain("skipPower");

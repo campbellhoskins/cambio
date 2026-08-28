@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { AddressInfo } from "node:net";
+import { dirname, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 import WebSocket from "ws";
 import { createCambioServer } from "./app.js";
 import { FakeClock } from "./clock.js";
@@ -191,6 +193,112 @@ describe("server app factory", () => {
       await server.app.close();
     }
   });
+
+  it("authenticates browser websocket upgrades with scoped cookies", async () => {
+    const server = await createCambioServer();
+    try {
+      await server.app.listen({ port: 0, host: "127.0.0.1" });
+      const address = server.app.server.address();
+      if (address === null || typeof address === "string") {
+        throw new Error("server did not bind to a TCP port");
+      }
+      const base = `ws://127.0.0.1:${(address as AddressInfo).port}`;
+      const created = await server.registry.createRoom({ displayName: "Alice" });
+      if (typeof created === "string") {
+        throw new Error(created);
+      }
+
+      const client = new WebSocket(`${base}/rooms/${created.roomCode}/ws`, {
+        headers: {
+          Cookie: [
+            `cambio_ws_seat_id=${encodeURIComponent(created.seatId)}`,
+            `cambio_ws_session_generation=${created.sessionGeneration}`,
+            `cambio_ws_reconnect_secret=${encodeURIComponent(created.reconnectSecret)}`,
+          ].join("; "),
+        },
+      });
+
+      const snapshot = new Promise<void>((resolveMessage, reject) => {
+        const timeout = setTimeout(() => reject(new Error("timed out waiting for snapshot")), 2_000);
+        client.on("message", (data) => {
+          const parsed = JSON.parse(data.toString()) as { readonly type?: string };
+          if (parsed.type === "stateSnapshot") {
+            clearTimeout(timeout);
+            resolveMessage();
+          }
+        });
+      });
+      await new Promise<void>((resolveOpen, reject) => {
+        client.on("open", resolveOpen);
+        client.on("error", reject);
+      });
+      await snapshot;
+      client.close();
+    } finally {
+      await server.app.close();
+    }
+  });
+
+  it("authenticates browser websocket upgrades with an auth subprotocol", async () => {
+    const server = await createCambioServer();
+    try {
+      await server.app.listen({ port: 0, host: "127.0.0.1" });
+      const address = server.app.server.address();
+      if (address === null || typeof address === "string") {
+        throw new Error("server did not bind to a TCP port");
+      }
+      const base = `ws://127.0.0.1:${(address as AddressInfo).port}`;
+      const created = await server.registry.createRoom({ displayName: "Alice" });
+      if (typeof created === "string") {
+        throw new Error(created);
+      }
+
+      const ProtocolWebSocket = WebSocket as unknown as {
+        new (url: string, protocols: readonly string[]): WebSocket;
+      };
+      const client = new ProtocolWebSocket(
+        `${base}/rooms/${created.roomCode}/ws`,
+        [authSubprotocol(created.seatId, created.sessionGeneration, created.reconnectSecret)],
+      );
+      const snapshot = new Promise<void>((resolveMessage, reject) => {
+        const timeout = setTimeout(() => reject(new Error("timed out waiting for snapshot")), 2_000);
+        client.on("message", (data) => {
+          const parsed = JSON.parse(data.toString()) as { readonly type?: string };
+          if (parsed.type === "stateSnapshot") {
+            clearTimeout(timeout);
+            resolveMessage();
+          }
+        });
+      });
+      await new Promise<void>((resolveOpen, reject) => {
+        client.on("open", resolveOpen);
+        client.on("error", reject);
+      });
+      await snapshot;
+      client.close();
+    } finally {
+      await server.app.close();
+    }
+  });
+
+  it("serves the SPA with local security headers when a web build path is configured", async () => {
+    const server = await createCambioServer({
+      webDistPath: resolve(dirname(fileURLToPath(import.meta.url)), "../../web"),
+    });
+    try {
+      const index = await server.app.inject({ method: "GET", url: "/" });
+      expect(index.statusCode).toBe(200);
+      expect(index.headers["content-security-policy"]).toContain("default-src 'self'");
+      expect(index.headers["x-content-type-options"]).toBe("nosniff");
+      expect(index.body).toContain("<div id=\"root\"></div>");
+
+      const fallback = await server.app.inject({ method: "GET", url: "/room/LOCAL123" });
+      expect(fallback.statusCode).toBe(200);
+      expect(fallback.body).toContain("<div id=\"root\"></div>");
+    } finally {
+      await server.app.close();
+    }
+  });
 });
 
 async function closedSocket(url: string, headers: Record<string, string>): Promise<number> {
@@ -203,4 +311,16 @@ async function closed(ws: WebSocket): Promise<number> {
     ws.on("close", (code) => resolve(code));
     ws.on("error", reject);
   });
+}
+
+function authSubprotocol(
+  seatId: string,
+  sessionGeneration: number,
+  reconnectSecret: string,
+): string {
+  return `cambio.auth.${Buffer.from(JSON.stringify({
+    seatId,
+    sessionGeneration,
+    reconnectSecret,
+  })).toString("base64url")}`;
 }

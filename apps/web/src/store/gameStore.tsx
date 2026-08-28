@@ -60,6 +60,23 @@ export interface GameState {
 
 export type GameStore = StoreApi<GameState>;
 
+interface CambioE2EState {
+  readonly snapshot: StateSnapshotView | null;
+  readonly revision: number | null;
+  readonly connectionStatus: ConnectionStatus;
+  readonly lastError: string | null;
+  readonly rejections: Partial<Record<RejectionCode, string>>;
+}
+
+declare global {
+  interface Window {
+    __cambioE2E?: {
+      readonly getState: () => CambioE2EState;
+      readonly sendCommand: (type: CommandType, payload: unknown) => void;
+    };
+  }
+}
+
 const revisionCommandTypes = new Set<CommandType>([
   "acknowledgeOpeningPeek",
   "readyForNextRound",
@@ -372,6 +389,26 @@ export function GameProvider({
     store.getState().hydrateSessions();
   }, [store]);
 
+  useEffect(() => {
+    if (!e2eHooksEnabled()) {
+      return;
+    }
+
+    const hook = {
+      getState: (): CambioE2EState => {
+        const { snapshot, revision, connectionStatus, lastError, rejections } = store.getState();
+        return { snapshot, revision, connectionStatus, lastError, rejections };
+      },
+      sendCommand: (type: CommandType, payload: unknown): void => store.getState().sendCommand(type, payload),
+    };
+    window.__cambioE2E = hook;
+    return () => {
+      if (window.__cambioE2E === hook) {
+        delete window.__cambioE2E;
+      }
+    };
+  }, [store]);
+
   return <GameStoreContext.Provider value={store}>{children}</GameStoreContext.Provider>;
 }
 
@@ -382,4 +419,16 @@ export function useGameStore<T>(selector: (state: GameState) => T): T {
   }
 
   return useStore(store, selector);
+}
+
+function e2eHooksEnabled(): boolean {
+  if (typeof window === "undefined") {
+    return false;
+  }
+  const params = new URLSearchParams(window.location.search);
+  if (params.has("__e2e")) {
+    window.localStorage.setItem("cambio.e2e", "1");
+    return true;
+  }
+  return window.localStorage.getItem("cambio.e2e") === "1";
 }

@@ -127,6 +127,7 @@ export const LegalActionSchema = z.enum([
   "attemptSnap",
   "chooseTransferTarget",
   "hostRemovePlayer",
+  "hostEndMatch",
 ]);
 
 export const StateSnapshotViewSchema = z.object({

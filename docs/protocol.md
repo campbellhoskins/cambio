@@ -107,6 +107,12 @@ detail (stack traces, SQL errors, or card identities).
 ## Transport
 
 - WebSocket, same-origin locally, one connection per seat controller.
+- Browser clients authenticate the WebSocket upgrade with a `cambio.auth.*`
+  WebSocket subprotocol containing the scoped reconnect credential. They also set
+  short-lived, path-scoped `cambio_ws_seat_id`, `cambio_ws_session_generation`, and
+  `cambio_ws_reconnect_secret` cookies before opening `/rooms/:roomCode/ws`.
+  The server accepts the same values through `x-seat-id`, `x-session-generation`, and
+  `x-reconnect-secret` headers for Node-based integration tests.
 - Frame-size limits and separate rate limits for join/resume, commands, and snap
   attempts are enforced at the transport layer, independent of the unlimited-attempt
   game rule for wrong snaps.

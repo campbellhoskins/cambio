@@ -146,6 +146,10 @@ function legalActionsForViewer(state: MatchState, viewerSeatId: PlayerId): Legal
     actions.push("hostRemovePlayer");
   }
 
+  if (state.hostPlayerId === viewerSeatId && state.status === "active") {
+    actions.push("hostEndMatch");
+  }
+
   if (state.status === "active" && round?.phase === "openingPeek" && !seat.openingPeekAcknowledged) {
     actions.push("acknowledgeOpeningPeek");
   }

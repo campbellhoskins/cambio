@@ -10,7 +10,8 @@
     "lint": "eslint src",
     "typecheck": "tsc -p tsconfig.json",
     "test": "vitest run --dir src",
-    "integration": "vitest run --dir test/integration"
+    "integration": "vitest run --dir test/integration",
+    "soak": "tsx src/soak.ts"
   },
   "dependencies": {
     "@cambio/engine": "workspace:*",
