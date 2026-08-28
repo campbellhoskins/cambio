@@ -8,7 +8,7 @@ import { RealProtocolAdapter } from "./connection/realAdapter.js";
 import "./styles.css";
 
 const adapterMode = resolveAdapterMode();
-const adapter = adapterMode === "mock" ? new MockProtocolAdapter() : new RealProtocolAdapter(import.meta.env.VITE_CAMBIO_HTTP_BASE ?? "");
+const adapter = adapterMode === "mock" ? new MockProtocolAdapter() : new RealProtocolAdapter(resolveApiBase());
 const root = document.getElementById("root");
 
 if (root === null) {
@@ -40,4 +40,9 @@ function resolveAdapterMode(): "mock" | "real" {
   return window.localStorage.getItem("cambio.adapter") === "mock" || import.meta.env.VITE_CAMBIO_ADAPTER === "mock"
     ? "mock"
     : "real";
+}
+
+function resolveApiBase(): string {
+  const params = new URLSearchParams(window.location.search);
+  return params.get("api") ?? import.meta.env.VITE_CAMBIO_HTTP_BASE ?? "";
 }

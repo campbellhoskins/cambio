@@ -200,9 +200,6 @@ importers:
 
   packages/ui:
     dependencies:
-      '@cambio/engine':
-        specifier: workspace:*
-        version: link:../engine
       '@cambio/protocol':
         specifier: workspace:*
         version: link:../protocol

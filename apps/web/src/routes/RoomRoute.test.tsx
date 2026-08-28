@@ -36,7 +36,7 @@ describe("room lobby route", () => {
     expect(navigator.clipboard.writeText).toHaveBeenCalledWith(`${window.location.origin}/room/MOCK01`);
 
     await user.click(screen.getByRole("button", { name: "Start match" }));
-    await waitFor(() => expect(screen.getAllByRole("heading", { name: "Match starting" }).length).toBeGreaterThan(0));
+    await waitFor(() => expect(screen.getAllByRole("heading", { name: "Game table" }).length).toBeGreaterThan(0));
   });
 });
 

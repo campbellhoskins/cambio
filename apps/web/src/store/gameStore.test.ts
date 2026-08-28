@@ -87,6 +87,34 @@ describe("game store revision and session handling", () => {
     });
   });
 
+  it("surfaces same-revision rejections and stores transient presentation events", async () => {
+    const adapter = new MockProtocolAdapter();
+    const storage = createMemoryStorage();
+    const store = createGameStore(adapter, storage);
+    await store.getState().createRoom("Alice", { roundCount: 9, snapWindowMs: 5_000, playerCap: 6 });
+    await Promise.resolve();
+
+    store.getState().applyServerMessage(ServerMessageSchema.parse({
+      type: "commandRejected",
+      commandId: "same-revision",
+      revision: 0,
+      code: "E_NOT_ACTIVE_PLAYER",
+    }));
+    expect(store.getState().lastError).toBe("It is not your turn.");
+
+    store.getState().applyServerMessage(ServerMessageSchema.parse({
+      type: "presentationEvent",
+      revision: 0,
+      payload: {
+        type: "wrongSnapReveal",
+        playerId: "seat-alice",
+        target: { playerId: "seat-bob", slotId: "seat-bob-top-left" },
+        card: { rank: "4", suit: "clubs" },
+      },
+    }));
+    expect(store.getState().presentationEvents).toHaveLength(1);
+  });
+
   it("rotates resume credentials, replaces storage, and closes the old controller", async () => {
     const adapter = new MockProtocolAdapter();
     const storage = createMemoryStorage();

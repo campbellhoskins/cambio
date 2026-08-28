@@ -6,6 +6,7 @@ import {
   ServerMessageSchema,
   ValidatedCommandEnvelopeSchema,
   type CommandType,
+  type PresentationEventPayload,
   type RejectionCode,
   type RoomConfig,
   type ServerMessage,
@@ -30,6 +31,7 @@ export interface GameState {
   readonly sessions: PublicSessionDescriptor[];
   readonly lastError: string | null;
   readonly rejections: Partial<Record<RejectionCode, string>>;
+  readonly presentationEvents: readonly PresentationEventPayload[];
   readonly needsResync: boolean;
   readonly controller: ConnectionController | null;
   readonly hydrateSessions: () => void;
@@ -98,6 +100,7 @@ export function createGameStore(adapter: ProtocolAdapter, storage: BrowserStorag
       sessions: publicDescriptors(loadCredentials(storage)),
       lastError: null,
       rejections: {},
+      presentationEvents: [],
       needsResync: false,
       controller: null,
       hydrateSessions: () => set({ sessions: publicDescriptors(loadCredentials(storage)) }),
@@ -176,11 +179,15 @@ export function createGameStore(adapter: ProtocolAdapter, storage: BrowserStorag
           return;
         }
 
-        if (parsed.revision <= (currentRevision ?? -1)) {
-          if ((parsed.type === "commandAccepted" || parsed.type === "commandRejected") && currentRevision !== null && parsed.revision < currentRevision) {
+        if (parsed.revision < (currentRevision ?? -1)) {
+          if ((parsed.type === "commandAccepted" || parsed.type === "commandRejected") && currentRevision !== null) {
             get().controller?.requestSnapshot();
             set({ needsResync: true, connectionAnnouncement: "Command acknowledged against an old revision. Resyncing." });
           }
+          return;
+        }
+
+        if (currentRevision !== null && parsed.revision === currentRevision && parsed.type === "stateSnapshot") {
           return;
         }
 
@@ -200,6 +207,11 @@ export function createGameStore(adapter: ProtocolAdapter, storage: BrowserStorag
           return;
         }
 
+        if (parsed.type === "commandAccepted") {
+          set({ connectionAnnouncement: `${parsed.result.commandType} accepted.`, lastError: null });
+          return;
+        }
+
         if (parsed.type === "commandRejected") {
           const friendly = friendlyError(parsed.code);
           set((state) => ({
@@ -207,6 +219,19 @@ export function createGameStore(adapter: ProtocolAdapter, storage: BrowserStorag
             lastError: friendly,
             connectionAnnouncement: friendly,
           }));
+          return;
+        }
+
+        if (parsed.type === "presentationEvent") {
+          set((state) => ({
+            presentationEvents: [...state.presentationEvents, parsed.payload],
+            connectionAnnouncement: presentationAnnouncement(parsed.payload),
+          }));
+          if (parsed.payload.type === "wrongSnapReveal") {
+            window.setTimeout(() => {
+              set((state) => ({ presentationEvents: state.presentationEvents.filter((event) => event !== parsed.payload) }));
+            }, 1_800);
+          }
         }
       },
       clearError: () => set({ lastError: null, rejections: {} }),
@@ -220,6 +245,15 @@ export function createGameStore(adapter: ProtocolAdapter, storage: BrowserStorag
       },
     };
   });
+}
+
+function presentationAnnouncement(event: PresentationEventPayload): string {
+  switch (event.type) {
+    case "wrongSnapReveal":
+      return "Wrong snap reveal shown briefly and penalty applied.";
+    case "reshuffled":
+      return `${event.cardCount} cards reshuffled into the draw pile.`;
+  }
 }
 
 const GameStoreContext = createContext<GameStore | null>(null);

@@ -4,6 +4,7 @@ import { ROOM_CONFIG_LIMITS, RoomConfigSchema, type RoomConfig } from "@cambio/p
 import { Button, FieldError, HostConfigPanel, LiveRegion, Roster, ShareRoomPanel, StartMatchPanel } from "@cambio/ui";
 import { useGameStore } from "../store/gameStore.js";
 import type { PublicSessionDescriptor } from "../session/credentials.js";
+import { GameTable } from "./GameTable.js";
 
 export function RoomRoute(): React.ReactElement {
   const params = useParams();
@@ -15,6 +16,7 @@ export function RoomRoute(): React.ReactElement {
   const lastError = useGameStore((state) => state.lastError);
   const connectionStatus = useGameStore((state) => state.connectionStatus);
   const connectionAnnouncement = useGameStore((state) => state.connectionAnnouncement);
+  const presentationEvents = useGameStore((state) => state.presentationEvents);
   const sendCommand = useGameStore((state) => state.sendCommand);
   const resumeSession = useGameStore((state) => state.resumeSession);
   const leaveCurrentRoom = useGameStore((state) => state.leaveCurrentRoom);
@@ -90,9 +92,12 @@ export function RoomRoute(): React.ReactElement {
       <header className="room-header panel">
         <div>
           <p className="eyebrow">Room {roomCode}</p>
-          <h1>{snapshot.room.status === "lobby" ? "Lobby" : "Match starting"}</h1>
+          <h1>{snapshot.room.status === "lobby" ? "Lobby" : snapshot.room.status === "complete" ? "Match complete" : "Game table"}</h1>
         </div>
-        <span className={`connection-pill connection-pill--${connectionStatus}`}>{connectionStatus}</span>
+        <div className="room-header__actions">
+          <Link className="text-link" to="/">Home</Link>
+          <span className={`connection-pill connection-pill--${connectionStatus}`}>{connectionStatus}</span>
+        </div>
       </header>
 
       {snapshot.room.status === "lobby" ? (
@@ -123,11 +128,15 @@ export function RoomRoute(): React.ReactElement {
           </section>
         </div>
       ) : (
-        <section className="panel" aria-live="polite">
-          <h2>Match starting</h2>
-          <p>The game table arrives in Phase 8. This client will continue to render only server snapshots.</p>
-          <Button variant="danger" onClick={onLeave}>Leave room</Button>
-        </section>
+        <GameTable
+          snapshot={snapshot}
+          connectionStatus={connectionStatus}
+          connectionAnnouncement={connectionAnnouncement}
+          lastError={lastError}
+          presentationEvents={presentationEvents}
+          onCommand={sendCommand}
+          onLeave={onLeave}
+        />
       )}
 
       <FieldError>{lastError}</FieldError>

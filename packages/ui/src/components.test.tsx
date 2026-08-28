@@ -2,8 +2,8 @@ import "@testing-library/jest-dom/vitest";
 import { cleanup, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { Button, CardBack, Dialog, FieldError, HostConfigPanel, LiveRegion, Roster, ShareRoomPanel, StartMatchPanel } from "./components.js";
-import type { SeatView, StateSnapshotView } from "@cambio/protocol";
+import { Button, CardBack, CardGrid, Dialog, DrawnCardTray, FieldError, HostConfigPanel, LiveRegion, PileSummary, PublicActionLog, Roster, Scoreboard, ShareRoomPanel, StartMatchPanel } from "./components.js";
+import type { SeatGridView, SeatView, StateSnapshotView } from "@cambio/protocol";
 
 const seats: SeatView[] = [
   {
@@ -122,5 +122,86 @@ describe("reusable lobby components", () => {
     expect(screen.getByRole("button", { name: "Close dialog" })).toHaveFocus();
     await user.keyboard("{Escape}");
     expect(onClose).toHaveBeenCalled();
+  });
+
+  it("renders hidden, hole, and revealed slots without hidden ranks", () => {
+    const grid: SeatGridView = {
+      playerId: "alice",
+      slots: [
+        { slotId: "a", kind: "starting", position: "topLeft", state: "hidden" },
+        { slotId: "b", kind: "starting", position: "topRight", state: "hole" },
+        { slotId: "c", kind: "starting", position: "bottomLeft", state: "revealed", card: { rank: "Q", suit: "hearts" } },
+        { slotId: "d", kind: "starting", position: "bottomRight", state: "hidden" },
+      ],
+    };
+
+    render(<CardGrid seat={seats[0]!} grid={grid} viewerSeatId="alice" />);
+
+    expect(screen.getByRole("button", { name: /top left face-down card/i })).toHaveTextContent("Face down");
+    expect(screen.getByRole("button", { name: /top right empty slot/i })).toHaveTextContent("Empty");
+    expect(screen.getByRole("button", { name: /bottom left revealed queen of hearts/i })).toBeInTheDocument();
+    expect(screen.getAllByText("Face down")).toHaveLength(2);
+    expect(screen.getByLabelText(/top left face-down card/i)).not.toHaveTextContent("Queen");
+    expect(screen.getByLabelText(/top left face-down card/i)).not.toHaveAccessibleName(/queen|heart|Q/i);
+  });
+
+  it("supports roving keyboard navigation in card grids", async () => {
+    const user = userEvent.setup();
+    const grid: SeatGridView = {
+      playerId: "alice",
+      slots: [
+        { slotId: "a", kind: "starting", position: "topLeft", state: "hidden" },
+        { slotId: "b", kind: "starting", position: "topRight", state: "hidden" },
+        { slotId: "c", kind: "starting", position: "bottomLeft", state: "hidden" },
+        { slotId: "d", kind: "starting", position: "bottomRight", state: "hidden" },
+      ],
+    };
+
+    render(<CardGrid seat={seats[0]!} grid={grid} viewerSeatId="alice" getSlotAction={() => ({ label: "Attempt snap", onSelect: vi.fn() })} />);
+    const topLeft = screen.getByRole("button", { name: /top left face-down card/i });
+    topLeft.focus();
+
+    await user.keyboard("{ArrowRight}");
+    expect(screen.getByRole("button", { name: /top right face-down card/i })).toHaveFocus();
+    await user.keyboard("{ArrowDown}");
+    expect(screen.getByRole("button", { name: /bottom right face-down card/i })).toHaveFocus();
+    await user.keyboard("{Home}");
+    expect(topLeft).toHaveFocus();
+  });
+
+  it("formats public history without card ranks for snap and power entries", () => {
+    render(
+      <PublicActionLog
+        seats={seats}
+        entries={[
+          { type: "powerTargetSelected", ownerId: "alice", kind: "blindSwap", target: { playerId: "bob", slotId: "bob-top-left" } },
+          { type: "snapAttempted", playerId: "bob", target: { playerId: "alice", slotId: "alice-top-right" }, correct: false, receivedOrder: 1 },
+        ]}
+      />,
+    );
+
+    expect(screen.getByText(/selected a blind swap target/i)).toBeInTheDocument();
+    expect(screen.getByText(/wrong, penalty drawn/i)).toBeInTheDocument();
+    expect(screen.queryByText(/queen|king|ace|hearts|spades|clubs|diamonds/i)).not.toBeInTheDocument();
+  });
+
+  it("renders pile, drawn-card, and score summaries", () => {
+    render(
+      <>
+        <PileSummary piles={{ drawPileCount: 12, discardPileCount: 0, discardTop: null, outOfPlayCount: 2 }} />
+        <DrawnCardTray drawnCard={{ state: "hidden", playerId: "bob" }} viewerSeatId="alice" ownerName="Bob" />
+        <Scoreboard
+          seats={seats}
+          scores={[
+            { playerId: "alice", cumulativeScore: 3, lastRoundRawScore: 3, lastRoundMatchPoints: 0, isRoundWinner: true },
+            { playerId: "bob", cumulativeScore: 12 },
+          ]}
+        />
+      </>,
+    );
+
+    expect(screen.getByText("No discard")).toBeInTheDocument();
+    expect(screen.getByText("Bob has a drawn card.")).toBeInTheDocument();
+    expect(screen.getByText("Round winner")).toBeInTheDocument();
   });
 });
