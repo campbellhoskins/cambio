@@ -1,34 +1,54 @@
+import { uniformIntDistribution, xoroshiro128plus } from "pure-rand";
+import type { RandomGenerator } from "pure-rand";
+import type { RandomState } from "./model/state.js";
+
 export interface RandomResult {
   readonly value: number;
-  readonly state: number;
+  readonly state: RandomState;
 }
 
-export function normalizeSeed(seed: number): number {
-  const normalized = seed >>> 0;
-  return normalized === 0 ? 0x6d2b79f5 : normalized;
+export interface SeededRng {
+  readonly state: RandomState;
+  readonly nextInt: (exclusiveMax: number) => RandomResult;
 }
 
-export function nextRandom(state: number): RandomResult {
-  let next = normalizeSeed(state);
-  next ^= next << 13;
-  next ^= next >>> 17;
-  next ^= next << 5;
-  next >>>= 0;
-
+function fromGenerator(generator: RandomGenerator): SeededRng {
   return {
-    value: next / 0x1_0000_0000,
-    state: next,
+    state: generator.getState(),
+    nextInt(exclusiveMax: number): RandomResult {
+      if (!Number.isSafeInteger(exclusiveMax) || exclusiveMax <= 0) {
+        throw new RangeError("exclusiveMax must be a positive safe integer");
+      }
+
+      const [value, nextGenerator] = uniformIntDistribution(0, exclusiveMax - 1, generator);
+      return {
+        value,
+        state: nextGenerator.getState(),
+      };
+    },
   };
 }
 
-export function shuffle<T>(items: readonly T[], initialState: number): { items: T[]; state: number } {
+export function createSeededRng(seed: number): SeededRng {
+  return fromGenerator(xoroshiro128plus(seed));
+}
+
+export function restoreSeededRng(state: RandomState): SeededRng {
+  return fromGenerator(xoroshiro128plus.fromState(state));
+}
+
+export function randomInt(state: RandomState, exclusiveMax: number): RandomResult {
+  return restoreSeededRng(state).nextInt(exclusiveMax);
+}
+
+export function shuffle<T>(items: readonly T[], initialState: RandomState): { items: readonly T[]; state: RandomState } {
   const shuffled = [...items];
-  let state = normalizeSeed(initialState);
+  let state = initialState;
 
   for (let index = shuffled.length - 1; index > 0; index -= 1) {
-    const result = nextRandom(state);
+    const result = randomInt(state, index + 1);
     state = result.state;
-    const target = Math.floor(result.value * (index + 1));
+    const target = result.value;
     [shuffled[index], shuffled[target]] = [shuffled[target]!, shuffled[index]!];
   }
 

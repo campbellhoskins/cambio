@@ -1,3 +1,5 @@
+import type { CardId } from "./cards.js";
+
 export type RoomId = string;
 export type PlayerId = string;
 export type SlotId = string;
@@ -8,5 +10,5 @@ export type TimerId = string;
 export interface SlotRef {
   readonly playerId: PlayerId;
   readonly slotId: SlotId;
-  readonly cardId: string;
+  readonly cardId: CardId;
 }

@@ -1,5 +1,6 @@
 import { RANKS, SUITS, type Card, type CardCatalog, type CardId } from "./model/cards.js";
-import { shuffle } from "./random.js";
+import type { RandomState } from "./model/state.js";
+import { createSeededRng, shuffle } from "./random.js";
 
 export interface Deck {
   readonly cards: CardCatalog;
@@ -27,9 +28,9 @@ export function createDeck(): Deck {
   return { cards, order };
 }
 
-export function createShuffledDeck(seed: number): Deck & { readonly randomState: number } {
+export function createShuffledDeck(seed: number): Deck & { readonly randomState: RandomState } {
   const deck = createDeck();
-  const result = shuffle(deck.order, seed);
+  const result = shuffle(deck.order, createSeededRng(seed).state);
   return {
     cards: deck.cards,
     order: result.items,

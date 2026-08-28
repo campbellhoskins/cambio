@@ -1,6 +1,8 @@
 import type { CardCatalog, CardId, PowerKind, Rank } from "./cards.js";
 import type { PlayerId, RoomId, SlotId, SlotRef, TimerId, WindowId } from "./ids.js";
 
+export type RandomState = readonly number[];
+
 export interface RoomConfig {
   readonly roundCount: number;
   readonly snapWindowMs: number;
@@ -24,9 +26,12 @@ export interface SeatState {
 
 export type SlotKind = "starting" | "penalty";
 
+export type StartingSlotPosition = "topLeft" | "topRight" | "bottomLeft" | "bottomRight";
+
 export interface CardSlot {
   readonly slotId: SlotId;
   readonly kind: SlotKind;
+  readonly position: StartingSlotPosition | null;
   readonly cardId: CardId | null;
 }
 
@@ -96,9 +101,9 @@ export interface CambioState {
 export interface RoundState {
   readonly roundNumber: number;
   readonly phase: RoundPhase;
-  readonly turnStage: TurnStage;
+  readonly turnStage: TurnStage | null;
   readonly dealerId: PlayerId;
-  readonly activePlayerId: PlayerId;
+  readonly activePlayerId: PlayerId | null;
   readonly cards: CardCatalog;
   readonly drawPile: readonly CardId[];
   readonly discardPile: readonly CardId[];
@@ -119,7 +124,7 @@ export interface MatchState {
   readonly config: RoomConfig;
   readonly status: MatchStatus;
   readonly revision: number;
-  readonly randomState: number;
+  readonly randomState: RandomState;
   readonly hostPlayerId: PlayerId | null;
   readonly seats: readonly SeatState[];
   readonly round: RoundState | null;
