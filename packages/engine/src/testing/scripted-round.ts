@@ -23,6 +23,7 @@ export interface ScriptedTurnCycleOptions {
   readonly drawPile?: readonly CardId[];
   readonly discardPile?: readonly CardId[];
   readonly outOfPlay?: readonly CardId[];
+  readonly snapWindowSequence?: number;
 }
 
 export function createScriptedTurnCycleMatchForTesting(
@@ -88,6 +89,8 @@ export function createScriptedTurnCycleMatchForTesting(
     status: "active",
     revision: options.revision ?? 1,
     randomState: createSeededRng(seed).state,
+    snapWindowSequence: options.snapWindowSequence ?? 0,
+    lastResolvedSnapWindow: null,
     round,
   };
 }

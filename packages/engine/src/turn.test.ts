@@ -6,6 +6,7 @@ import {
   callCambio,
   discardDrawn,
   drawCard,
+  expireSnapWindow,
   readyForNextRound,
   reduceCommand,
   replaceSlot,
@@ -49,6 +50,7 @@ describe("turn engine transitions", () => {
     result = accepted(discardDrawn(state, { type: "discardDrawn", actorId: "carol" }));
     state = result.state;
     expect(round(state).discardPile[0]).toBe("diamonds:5");
+    state = expireOpenSnap(state);
     expect(round(state).activePlayerId).toBe("alice");
 
     result = accepted(drawCard(state, { type: "drawCard", actorId: "alice" }));
@@ -58,6 +60,14 @@ describe("turn engine transitions", () => {
         type: "replaceSlot",
         actorId: "alice",
         slotId: startingSlotId("alice", "topLeft"),
+      }),
+    );
+    state = result.state;
+    result = accepted(
+      expireSnapWindow(state, {
+        type: "expireSnapWindow",
+        windowId: round(state).snapWindow!.windowId,
+        generation: round(state).snapWindow!.generation,
       }),
     );
     state = result.state;
@@ -149,6 +159,7 @@ describe("turn engine transitions", () => {
     for (const playerId of ["dave", "alice", "bob"] as const) {
       state = accepted(drawCard(state, { type: "drawCard", actorId: playerId })).state;
       state = accepted(discardDrawn(state, { type: "discardDrawn", actorId: playerId })).state;
+      state = expireOpenSnap(state);
     }
 
     expect(state.status).toBe("intermission");
@@ -222,7 +233,9 @@ describe("turn engine transitions", () => {
       discardDrawn(drawn, { type: "discardDrawn", actorId: "alice" }),
     ).state;
     expect(round(discarded).discardPile[0]).toBe("hearts:5");
-    expect(round(discarded).activePlayerId).toBe("bob");
+    expect(round(discarded).activePlayerId).toBe("alice");
+    expect(round(discarded).snapWindow).not.toBeNull();
+    expect(round(expireOpenSnap(discarded)).activePlayerId).toBe("bob");
   });
 
   it("allows a zero-occupied-slot player to draw and discard or call cambio", () => {
@@ -238,6 +251,7 @@ describe("turn engine transitions", () => {
 
     state = accepted(drawCard(state, { type: "drawCard", actorId: "alice" })).state;
     state = accepted(discardDrawn(state, { type: "discardDrawn", actorId: "alice" })).state;
+    state = expireOpenSnap(state);
     expect(round(state).activePlayerId).toBe("bob");
     expect(checkInvariants(state)).toEqual({ ok: true, violations: [] });
 
@@ -357,6 +371,17 @@ function replay(commands: readonly EngineCommand[]): {
     const result = accepted(reduceCommand(state, command));
     state = result.state;
     events.push(...result.events);
+    if (round(state).snapWindow !== null && round(state).pendingPower === null) {
+      const expired = accepted(
+        expireSnapWindow(state, {
+          type: "expireSnapWindow",
+          windowId: round(state).snapWindow!.windowId,
+          generation: round(state).snapWindow!.generation,
+        }),
+      );
+      state = expired.state;
+      events.push(...expired.events);
+    }
   }
 
   return { state, events };
@@ -392,6 +417,21 @@ function accepted(result: TransitionResult): Extract<TransitionResult, { ok: tru
 
   expect(checkInvariants(result.state)).toEqual({ ok: true, violations: [] });
   return result;
+}
+
+function expireOpenSnap(state: MatchState): MatchState {
+  const snapWindow = round(state).snapWindow;
+  if (snapWindow === null) {
+    return state;
+  }
+
+  return accepted(
+    expireSnapWindow(state, {
+      type: "expireSnapWindow",
+      windowId: snapWindow.windowId,
+      generation: snapWindow.generation,
+    }),
+  ).state;
 }
 
 function assertRejected(

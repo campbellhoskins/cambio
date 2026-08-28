@@ -23,4 +23,15 @@ describe("seeded rng", () => {
 
     expect(restoredSecond).toEqual(second);
   });
+
+  it("rejects non-positive and unsafe exclusive maxima", () => {
+    const rng = createSeededRng(1);
+
+    for (const exclusiveMax of [0, -1, 1.5, Number.MAX_SAFE_INTEGER + 1]) {
+      expect(() => rng.nextInt(exclusiveMax)).toThrow(RangeError);
+      expect(() => randomInt(rng.state, exclusiveMax)).toThrow(
+        "exclusiveMax must be a positive safe integer",
+      );
+    }
+  });
 });

@@ -86,6 +86,11 @@ export interface SnapWindow {
   readonly resolvedBy: PlayerId | null;
 }
 
+export interface ResolvedSnapWindow {
+  readonly windowId: WindowId;
+  readonly generation: number;
+}
+
 export interface PendingTransfer {
   readonly fromPlayerId: PlayerId;
   readonly toPlayerId: PlayerId;
@@ -125,6 +130,8 @@ export interface MatchState {
   readonly status: MatchStatus;
   readonly revision: number;
   readonly randomState: RandomState;
+  readonly snapWindowSequence: number;
+  readonly lastResolvedSnapWindow: ResolvedSnapWindow | null;
   readonly hostPlayerId: PlayerId | null;
   readonly seats: readonly SeatState[];
   readonly round: RoundState | null;

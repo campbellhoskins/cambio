@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { scoreRound } from "./scoring.js";
+import { createDeck } from "./deck.js";
+import type { CardSlot } from "./model/state.js";
+import { calculateRawScores, cumulativeWinners, occupiedCardIds, scoreRound } from "./scoring.js";
 
 describe("scoring helpers", () => {
   it("scores a unique winning cambio caller as zero", () => {
@@ -71,6 +73,33 @@ describe("scoring helpers", () => {
         p2: 0,
       },
     );
+  });
+
+  it("returns empty scoring and winner lists when no players are eligible", () => {
+    expect(scoreRound({}, [], "cambio", null)).toEqual([]);
+    expect(cumulativeWinners({}, [])).toEqual([]);
+  });
+
+  it("returns every player tied for the lowest cumulative score", () => {
+    expect(cumulativeWinners({ alice: 3, bob: 3, carol: 7 }, ["alice", "bob", "carol"])).toEqual([
+      "alice",
+      "bob",
+    ]);
+    expect(cumulativeWinners({ alice: 0 }, ["alice", "bob"])).toEqual(["alice", "bob"]);
+  });
+
+  it("filters holes when listing occupied cards and treats missing score grids as empty", () => {
+    const slots: readonly CardSlot[] = [
+      { slotId: "slot:alice:starting:topLeft", kind: "starting", position: "topLeft", cardId: "clubs:A" },
+      { slotId: "slot:alice:starting:topRight", kind: "starting", position: "topRight", cardId: null },
+      { slotId: "slot:alice:penalty:1", kind: "penalty", position: null, cardId: "joker:1" },
+    ];
+
+    expect(occupiedCardIds(slots)).toEqual(["clubs:A", "joker:1"]);
+    expect(calculateRawScores({ alice: slots }, createDeck().cards, ["alice", "missing"])).toEqual({
+      alice: 1,
+      missing: 0,
+    });
   });
 });
 
