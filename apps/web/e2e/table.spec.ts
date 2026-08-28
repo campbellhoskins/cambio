@@ -1,7 +1,10 @@
 import { expect, test, type Page } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
 
-test("keyboard-friendly mock match journey reaches final summary with an axe-clean table", async ({ page }) => {
+test("keyboard-friendly mock match journey reaches final summary with an axe-clean table", async ({
+  page,
+}) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
   await page.goto("/?adapter=mock");
   await page.evaluate(() => window.localStorage.removeItem("cambio.mock.rooms"));
   await page.reload();
@@ -22,6 +25,8 @@ test("keyboard-friendly mock match journey reaches final summary with an axe-cle
   await resume(page, roomCode, "Alice");
   await page.getByRole("button", { name: "Start match" }).click();
   await expect(page.getByRole("heading", { name: "Game table", exact: true })).toBeVisible();
+  await expect(page.locator(".game-table")).toHaveAttribute("data-reduced-motion", "true");
+  await expect(page.getByRole("button", { name: "Enable sound" })).toBeVisible();
   await page.getByRole("button", { name: "Acknowledge opening peek" }).click();
 
   await resume(page, roomCode, "Bob");
@@ -29,15 +34,34 @@ test("keyboard-friendly mock match journey reaches final summary with an axe-cle
 
   await resume(page, roomCode, "Alice");
   await page.getByRole("button", { name: "Draw card" }).click();
-  await page.getByRole("button", { name: /top left face-down card for alice.*replace with drawn card/i }).click();
+  await page
+    .getByRole("button", { name: /top left face-down card for alice.*replace with drawn card/i })
+    .click();
   await page.getByRole("button", { name: "Skip power" }).click();
   await expectNoSeriousAxeViolations(page);
 
   await page.getByRole("button", { name: "Enter snap mode" }).click();
-  await page.getByRole("button", { name: /top left face-down card for bob.*attempt snap/i }).click();
-  await expect(page.getByRole("button", { name: /transient wrong snap reveal, 3 of diamonds, for bob/i })).toBeVisible();
-  await page.getByRole("button", { name: /top right face-down card for bob.*attempt snap/i }).click();
-  await page.getByRole("button", { name: /top right face-down card for alice.*transfer this card/i }).click();
+  await page
+    .getByRole("button", { name: /top left face-down card for bob.*attempt snap/i })
+    .click();
+  await expect(
+    page.getByRole("button", { name: /transient wrong snap reveal, 3 of diamonds, for bob/i }),
+  ).toBeVisible();
+  await expect(page.getByRole("region", { name: "Public history" })).not.toContainText(
+    "3 of diamonds",
+  );
+  await page
+    .getByRole("button", { name: /top right face-down card for bob.*attempt snap/i })
+    .click();
+  await expect(
+    page.getByText(
+      "Choose one of your occupied slots to transfer after the successful opponent snap.",
+    ),
+  ).toBeVisible();
+  await page
+    .getByRole("button", { name: /top right face-down card for alice.*transfer this card/i })
+    .click();
+  await expect(page.getByText(/active: alice/i)).toBeVisible();
 
   await page.getByRole("button", { name: "Call Cambio" }).click();
   await resume(page, roomCode, "Bob");
@@ -65,6 +89,8 @@ async function goHomeWithoutReload(page: Page): Promise<void> {
 
 async function expectNoSeriousAxeViolations(page: Page): Promise<void> {
   const results = await new AxeBuilder({ page }).analyze();
-  const serious = results.violations.filter((violation) => violation.impact === "serious" || violation.impact === "critical");
+  const serious = results.violations.filter(
+    (violation) => violation.impact === "serious" || violation.impact === "critical",
+  );
   expect(serious).toEqual([]);
 }

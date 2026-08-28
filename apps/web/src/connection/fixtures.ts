@@ -1,4 +1,11 @@
-import { StateSnapshotViewSchema, type CardView, type LegalAction, type SeatGridView, type SeatView, type StateSnapshotView } from "@cambio/protocol";
+import {
+  StateSnapshotViewSchema,
+  type CardView,
+  type LegalAction,
+  type SeatGridView,
+  type SeatView,
+  type StateSnapshotView,
+} from "@cambio/protocol";
 
 export interface LobbyFixtureOptions {
   readonly roomId?: string;
@@ -10,7 +17,9 @@ export interface LobbyFixtureOptions {
   readonly seats?: readonly SeatView[];
 }
 
-export function makeSeat(overrides: Partial<SeatView> & Pick<SeatView, "playerId" | "displayName" | "seatIndex">): SeatView {
+export function makeSeat(
+  overrides: Partial<SeatView> & Pick<SeatView, "playerId" | "displayName" | "seatIndex">,
+): SeatView {
   return {
     joinOrder: overrides.seatIndex,
     connection: "connected",
@@ -89,18 +98,32 @@ export interface GameFixtureOptions {
   readonly pauseReasons?: readonly string[];
   readonly scores?: StateSnapshotView["scores"];
   readonly actionLog?: StateSnapshotView["actionLog"];
+  readonly publicMovements?: StateSnapshotView["publicMovements"];
   readonly cambio?: StateSnapshotView["round"]["cambio"];
   readonly endReason?: StateSnapshotView["round"]["endReason"];
 }
 
 export function makeGameView(options: GameFixtureOptions = {}): StateSnapshotView {
   const seats = options.seats ?? [
-    makeSeat({ playerId: "seat-alice", displayName: "Alice", seatIndex: 0, isHost: true, openingPeekAcknowledged: true }),
-    makeSeat({ playerId: "seat-bob", displayName: "Bob", seatIndex: 1, joinOrder: 1, openingPeekAcknowledged: true }),
+    makeSeat({
+      playerId: "seat-alice",
+      displayName: "Alice",
+      seatIndex: 0,
+      isHost: true,
+      openingPeekAcknowledged: true,
+    }),
+    makeSeat({
+      playerId: "seat-bob",
+      displayName: "Bob",
+      seatIndex: 1,
+      joinOrder: 1,
+      openingPeekAcknowledged: true,
+    }),
   ];
   const viewerSeatId = options.viewerSeatId ?? seats[0]?.playerId ?? "seat-alice";
   const host = seats.find((seat) => seat.isHost)?.playerId ?? seats[0]?.playerId ?? null;
-  const grids = options.grids ?? seats.map((seat) => makeGrid(seat.playerId, seat.playerId === viewerSeatId));
+  const grids =
+    options.grids ?? seats.map((seat) => makeGrid(seat.playerId, seat.playerId === viewerSeatId));
 
   return StateSnapshotViewSchema.parse({
     room: {
@@ -132,9 +155,12 @@ export function makeGameView(options: GameFixtureOptions = {}): StateSnapshotVie
     pendingPower: options.pendingPower ?? null,
     pendingTransfer: options.pendingTransfer ?? null,
     pauseReasons: options.pauseReasons ?? [],
-    scores: options.scores ?? seats.map((seat) => ({ playerId: seat.playerId, cumulativeScore: 0 })),
-    publicMovements: [],
-    actionLog: options.actionLog ?? [{ type: "roundDealt", roundNumber: 1, dealerId: seats[0]?.playerId ?? "seat-alice" }],
+    scores:
+      options.scores ?? seats.map((seat) => ({ playerId: seat.playerId, cumulativeScore: 0 })),
+    publicMovements: options.publicMovements ?? [],
+    actionLog: options.actionLog ?? [
+      { type: "roundDealt", roundNumber: 1, dealerId: seats[0]?.playerId ?? "seat-alice" },
+    ],
     legalActions: options.legalActions ?? [],
   });
 }
@@ -146,16 +172,41 @@ export function makeGrid(playerId: string, revealBottom = false): SeatGridView {
       { slotId: `${playerId}-top-left`, kind: "starting", position: "topLeft", state: "hidden" },
       { slotId: `${playerId}-top-right`, kind: "starting", position: "topRight", state: "hidden" },
       revealBottom
-        ? { slotId: `${playerId}-bottom-left`, kind: "starting", position: "bottomLeft", state: "revealed", card: card("5", "clubs") }
-        : { slotId: `${playerId}-bottom-left`, kind: "starting", position: "bottomLeft", state: "hidden" },
+        ? {
+            slotId: `${playerId}-bottom-left`,
+            kind: "starting",
+            position: "bottomLeft",
+            state: "revealed",
+            card: card("5", "clubs"),
+          }
+        : {
+            slotId: `${playerId}-bottom-left`,
+            kind: "starting",
+            position: "bottomLeft",
+            state: "hidden",
+          },
       revealBottom
-        ? { slotId: `${playerId}-bottom-right`, kind: "starting", position: "bottomRight", state: "revealed", card: card("K", "spades") }
-        : { slotId: `${playerId}-bottom-right`, kind: "starting", position: "bottomRight", state: "hidden" },
+        ? {
+            slotId: `${playerId}-bottom-right`,
+            kind: "starting",
+            position: "bottomRight",
+            state: "revealed",
+            card: card("K", "spades"),
+          }
+        : {
+            slotId: `${playerId}-bottom-right`,
+            kind: "starting",
+            position: "bottomRight",
+            state: "hidden",
+          },
       { slotId: `${playerId}-penalty-1`, kind: "penalty", position: null, state: "hidden" },
     ],
   };
 }
 
-export function card(rank: Exclude<CardView["rank"], "JOKER">, suit: Exclude<CardView, { readonly rank: "JOKER" }>["suit"]): CardView {
+export function card(
+  rank: Exclude<CardView["rank"], "JOKER">,
+  suit: Exclude<CardView, { readonly rank: "JOKER" }>["suit"],
+): CardView {
   return { rank, suit };
 }

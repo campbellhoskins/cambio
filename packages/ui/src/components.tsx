@@ -1,5 +1,21 @@
-import { useEffect, useId, useRef, useState, type FormEvent, type KeyboardEvent, type ReactNode } from "react";
-import type { ActionLogEntry, CardView, SeatGridView, SeatView, SlotTarget, SlotView, StateSnapshotView } from "@cambio/protocol";
+import {
+  useEffect,
+  useId,
+  useRef,
+  useState,
+  type FormEvent,
+  type KeyboardEvent,
+  type ReactNode,
+} from "react";
+import type {
+  ActionLogEntry,
+  CardView,
+  SeatGridView,
+  SeatView,
+  SlotTarget,
+  SlotView,
+  StateSnapshotView,
+} from "@cambio/protocol";
 
 export function Button({
   children,
@@ -11,13 +27,23 @@ export function Button({
   readonly variant?: "primary" | "secondary" | "danger" | "ghost";
 }): ReactNode {
   return (
-    <button type={type} className={`ui-button ui-button--${variant} ${className}`.trim()} {...props}>
+    <button
+      type={type}
+      className={`ui-button ui-button--${variant} ${className}`.trim()}
+      {...props}
+    >
       {children}
     </button>
   );
 }
 
-export function FieldError({ id, children }: { readonly id?: string; readonly children: ReactNode }): ReactNode {
+export function FieldError({
+  id,
+  children,
+}: {
+  readonly id?: string;
+  readonly children: ReactNode;
+}): ReactNode {
   if (children === null || children === undefined || children === "") {
     return null;
   }
@@ -44,15 +70,29 @@ export function TextField({
   const inputId = props.id ?? generated;
   const errorId = `${inputId}-error`;
   const descriptionId = `${inputId}-description`;
-  const describedBy = [description === undefined ? undefined : descriptionId, error === undefined ? undefined : errorId]
-    .filter((value): value is string => value !== undefined)
-    .join(" ") || undefined;
+  const describedBy =
+    [
+      description === undefined ? undefined : descriptionId,
+      error === undefined ? undefined : errorId,
+    ]
+      .filter((value): value is string => value !== undefined)
+      .join(" ") || undefined;
 
   return (
     <label className={`ui-field ${className}`.trim()} htmlFor={inputId}>
       <span className="ui-field__label">{label}</span>
-      {description === undefined ? null : <span id={descriptionId} className="ui-field__description">{description}</span>}
-      <input {...props} id={inputId} type="text" aria-invalid={error === undefined ? undefined : true} aria-describedby={describedBy} />
+      {description === undefined ? null : (
+        <span id={descriptionId} className="ui-field__description">
+          {description}
+        </span>
+      )}
+      <input
+        {...props}
+        id={inputId}
+        type="text"
+        aria-invalid={error === undefined ? undefined : true}
+        aria-describedby={describedBy}
+      />
       <FieldError id={errorId}>{error}</FieldError>
     </label>
   );
@@ -73,15 +113,29 @@ export function NumberField({
   const inputId = props.id ?? generated;
   const errorId = `${inputId}-error`;
   const descriptionId = `${inputId}-description`;
-  const describedBy = [description === undefined ? undefined : descriptionId, error === undefined ? undefined : errorId]
-    .filter((value): value is string => value !== undefined)
-    .join(" ") || undefined;
+  const describedBy =
+    [
+      description === undefined ? undefined : descriptionId,
+      error === undefined ? undefined : errorId,
+    ]
+      .filter((value): value is string => value !== undefined)
+      .join(" ") || undefined;
 
   return (
     <label className={`ui-field ${className}`.trim()} htmlFor={inputId}>
       <span className="ui-field__label">{label}</span>
-      {description === undefined ? null : <span id={descriptionId} className="ui-field__description">{description}</span>}
-      <input {...props} id={inputId} type="number" aria-invalid={error === undefined ? undefined : true} aria-describedby={describedBy} />
+      {description === undefined ? null : (
+        <span id={descriptionId} className="ui-field__description">
+          {description}
+        </span>
+      )}
+      <input
+        {...props}
+        id={inputId}
+        type="number"
+        aria-invalid={error === undefined ? undefined : true}
+        aria-describedby={describedBy}
+      />
       <FieldError id={errorId}>{error}</FieldError>
     </label>
   );
@@ -123,7 +177,8 @@ export function Dialog({
       return;
     }
 
-    previousFocus.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    previousFocus.current =
+      document.activeElement instanceof HTMLElement ? document.activeElement : null;
     const focusable = panelRef.current?.querySelector<HTMLElement>(
       "button, [href], input, select, textarea, [tabindex]:not([tabindex='-1'])",
     );
@@ -137,11 +192,15 @@ export function Dialog({
   }
 
   return (
-    <div className="ui-dialog" role="presentation" onMouseDown={(event) => {
-      if (event.target === event.currentTarget) {
-        onClose();
-      }
-    }}>
+    <div
+      className="ui-dialog"
+      role="presentation"
+      onMouseDown={(event) => {
+        if (event.target === event.currentTarget) {
+          onClose();
+        }
+      }}
+    >
       <div
         ref={panelRef}
         role="dialog"
@@ -156,7 +215,9 @@ export function Dialog({
       >
         <div className="ui-dialog__header">
           <h2 id={titleId}>{title}</h2>
-          <Button variant="ghost" aria-label={closeLabel} onClick={onClose}>×</Button>
+          <Button variant="ghost" aria-label={closeLabel} onClick={onClose}>
+            ×
+          </Button>
         </div>
         {children}
       </div>
@@ -181,12 +242,17 @@ export function Roster({
         {seats.map((seat) => (
           <li key={seat.playerId} className="ui-roster__item">
             <span className="ui-roster__name">
-              {seat.displayName}{seat.playerId === viewerSeatId ? " (you)" : ""}
+              {seat.displayName}
+              {seat.playerId === viewerSeatId ? " (you)" : ""}
             </span>
             <span className="ui-roster__meta">
               {seat.isHost ? <span className="ui-badge">Host</span> : null}
-              <span className={`ui-status ui-status--${seat.connection}`}>{connectionLabel(seat.connection)}</span>
-              {seat.removalEligible ? <span className="ui-badge ui-badge--warning">Removal eligible</span> : null}
+              <span className={`ui-status ui-status--${seat.connection}`}>
+                {connectionLabel(seat.connection)}
+              </span>
+              {seat.removalEligible ? (
+                <span className="ui-badge ui-badge--warning">Removal eligible</span>
+              ) : null}
             </span>
           </li>
         ))}
@@ -232,7 +298,11 @@ export function HostConfigPanel({
     <section className="ui-card" aria-labelledby="settings-title">
       <div className="ui-card__header">
         <h2 id="settings-title">Lobby settings</h2>
-        {isHost ? <span className="ui-badge">Host controls</span> : <span className="ui-muted">Waiting for host</span>}
+        {isHost ? (
+          <span className="ui-badge">Host controls</span>
+        ) : (
+          <span className="ui-muted">Waiting for host</span>
+        )}
       </div>
       <form
         className="ui-form ui-form--compact"
@@ -273,7 +343,9 @@ export function HostConfigPanel({
           disabled={controlsDisabled}
           onChange={(event) => setPlayerCap(event.currentTarget.value)}
         />
-        <Button type="submit" variant="primary" disabled={controlsDisabled}>Save settings</Button>
+        <Button type="submit" variant="primary" disabled={controlsDisabled}>
+          Save settings
+        </Button>
         <FieldError>{error}</FieldError>
       </form>
     </section>
@@ -296,15 +368,23 @@ export function ShareRoomPanel({
       <div className="ui-card__header">
         <h2 id="share-title">Invite players</h2>
       </div>
-      <p className="ui-muted">Share the room code or link. Reconnect credentials are never included.</p>
+      <p className="ui-muted">
+        Share the room code or link. Reconnect credentials are never included.
+      </p>
       <dl className="ui-share">
         <dt>Room code</dt>
-        <dd><code>{roomCode}</code></dd>
+        <dd>
+          <code>{roomCode}</code>
+        </dd>
         <dt>Room link</dt>
-        <dd><code>{roomLink}</code></dd>
+        <dd>
+          <code>{roomLink}</code>
+        </dd>
       </dl>
       <Button onClick={onCopy}>Copy room link</Button>
-      <span className="ui-copy-status" aria-live="polite">{copied ? "Copied room link" : ""}</span>
+      <span className="ui-copy-status" aria-live="polite">
+        {copied ? "Copied room link" : ""}
+      </span>
     </section>
   );
 }
@@ -330,7 +410,9 @@ export function StartMatchPanel({
     <section className="ui-card" aria-labelledby="start-title">
       <h2 id="start-title">Start match</h2>
       <p>{reason}</p>
-      <Button variant="primary" disabled={!canStart} onClick={onStart}>Start match</Button>
+      <Button variant="primary" disabled={!canStart} onClick={onStart}>
+        Start match
+      </Button>
     </section>
   );
 }
@@ -346,17 +428,26 @@ export interface SlotAction {
   readonly onSelect: () => void;
 }
 
+export type CardSlotEffect =
+  "deal" | "replace" | "discard" | "snap" | "penalty" | "transfer" | "swap" | "reveal";
+export type PileEffect = "draw" | "discard" | "reshuffle";
+export type DrawnCardEffect = "draw" | "discard" | "reveal";
+
 export function CardGrid({
   seat,
   grid,
   viewerSeatId,
   transientReveals = [],
+  slotEffects,
+  reducedMotion = false,
   getSlotAction,
 }: {
   readonly seat: SeatView;
   readonly grid: SeatGridView;
   readonly viewerSeatId: string;
   readonly transientReveals?: readonly (SlotTarget & { readonly card: CardView })[];
+  readonly slotEffects?: ReadonlyMap<string, CardSlotEffect>;
+  readonly reducedMotion?: boolean;
   readonly getSlotAction?: (slot: SlotView) => SlotAction | null;
 }): ReactNode {
   const slots = [...grid.slots].sort(compareSlots);
@@ -414,9 +505,12 @@ export function CardGrid({
     <section className="ui-seat-grid" aria-labelledby={`seat-${seat.playerId}-title`}>
       <div className="ui-seat-grid__header">
         <h3 id={`seat-${seat.playerId}-title`}>
-          {seat.displayName}{seat.playerId === viewerSeatId ? " (you)" : ""}
+          {seat.displayName}
+          {seat.playerId === viewerSeatId ? " (you)" : ""}
         </h3>
-        <span className={`ui-status ui-status--${seat.connection}`}>{connectionLabel(seat.connection)}</span>
+        <span className={`ui-status ui-status--${seat.connection}`}>
+          {connectionLabel(seat.connection)}
+        </span>
       </div>
       <div
         className="ui-card-grid"
@@ -426,8 +520,15 @@ export function CardGrid({
       >
         {slots.map((slot, index) => {
           const action = getSlotAction?.(slot) ?? null;
-          const reveal = transientReveals.find((candidate) => candidate.playerId === grid.playerId && candidate.slotId === slot.slotId);
+          const reveal = transientReveals.find(
+            (candidate) => candidate.playerId === grid.playerId && candidate.slotId === slot.slotId,
+          );
           const unavailable = action === null || action.disabled === true;
+          const effect = reducedMotion
+            ? null
+            : (slotEffects?.get(slotEffectKey(grid.playerId, slot.slotId)) ??
+              slotEffects?.get(slot.slotId) ??
+              null);
           return (
             <button
               key={slot.slotId}
@@ -440,7 +541,12 @@ export function CardGrid({
                 `ui-slot--${slot.state}`,
                 action?.selected === true ? "ui-slot--selected" : "",
                 unavailable ? "ui-slot--unavailable" : "ui-slot--actionable",
-              ].filter(Boolean).join(" ")}
+                effect === null ? "" : "ui-slot--effect",
+                effect === null ? "" : `ui-slot--effect-${effect}`,
+              ]
+                .filter(Boolean)
+                .join(" ")}
+              data-effect={effect ?? undefined}
               aria-label={slotAriaLabel(slot, seat, action, reveal?.card)}
               aria-disabled={unavailable}
               aria-selected={action?.selected === true ? true : undefined}
@@ -457,6 +563,7 @@ export function CardGrid({
               <span className="ui-slot__position">{slotPositionLabel(slot)}</span>
               {renderSlotContents(slot, reveal?.card)}
               {action === null ? null : <span className="ui-slot__action">{action.label}</span>}
+              {effect === null ? null : <span className="sr-only">{slotEffectLabel(effect)}</span>}
             </button>
           );
         })}
@@ -468,14 +575,22 @@ export function CardGrid({
 export function Scoreboard({
   seats,
   scores,
+  highlight = false,
+  reducedMotion = false,
 }: {
   readonly seats: readonly SeatView[];
   readonly scores: StateSnapshotView["scores"];
+  readonly highlight?: boolean;
+  readonly reducedMotion?: boolean;
 }): ReactNode {
   const names = playerNames(seats);
 
   return (
-    <section className="ui-card" aria-labelledby="scoreboard-title">
+    <section
+      className={`ui-card${highlight && !reducedMotion ? " ui-card--score-effect" : ""}`}
+      aria-labelledby="scoreboard-title"
+      data-effect={highlight && !reducedMotion ? "scoring" : undefined}
+    >
       <div className="ui-card__header">
         <h2 id="scoreboard-title">Scores</h2>
       </div>
@@ -493,7 +608,9 @@ export function Scoreboard({
             <tr key={score.playerId}>
               <th scope="row">
                 {names.get(score.playerId) ?? score.playerId}
-                {score.isRoundWinner === true ? <span className="ui-badge">Round winner</span> : null}
+                {score.isRoundWinner === true ? (
+                  <span className="ui-badge">Round winner</span>
+                ) : null}
               </th>
               <td>{score.lastRoundRawScore ?? "—"}</td>
               <td>{score.lastRoundMatchPoints ?? "—"}</td>
@@ -506,17 +623,38 @@ export function Scoreboard({
   );
 }
 
-export function PileSummary({ piles }: { readonly piles: StateSnapshotView["piles"] }): ReactNode {
+export function PileSummary({
+  piles,
+  pileEffect,
+  reducedMotion = false,
+}: {
+  readonly piles: StateSnapshotView["piles"];
+  readonly pileEffect?: PileEffect | null;
+  readonly reducedMotion?: boolean;
+}): ReactNode {
+  const visibleEffect = reducedMotion ? null : (pileEffect ?? null);
   return (
     <section className="ui-piles" aria-label="Card piles">
-      <div className="ui-pile">
+      <div
+        className="ui-pile"
+        data-effect={
+          visibleEffect === "draw" || visibleEffect === "reshuffle" ? visibleEffect : undefined
+        }
+      >
         <span className="ui-pile__label">Draw pile</span>
         <CardBack label={`Draw pile, ${piles.drawPileCount} cards remaining`} />
         <strong>{piles.drawPileCount} cards</strong>
       </div>
-      <div className="ui-pile">
+      <div
+        className="ui-pile"
+        data-effect={visibleEffect === "discard" ? visibleEffect : undefined}
+      >
         <span className="ui-pile__label">Discard pile</span>
-        {piles.discardTop === null ? <span className="ui-empty-card">No discard</span> : <CardFace card={piles.discardTop} />}
+        {piles.discardTop === null ? (
+          <span className="ui-empty-card">No discard</span>
+        ) : (
+          <CardFace card={piles.discardTop} />
+        )}
         <strong>{piles.discardPileCount} cards</strong>
       </div>
       <div className="ui-pile">
@@ -527,26 +665,46 @@ export function PileSummary({ piles }: { readonly piles: StateSnapshotView["pile
   );
 }
 
-export function DrawnCardTray({ drawnCard, viewerSeatId, ownerName }: {
+export function DrawnCardTray({
+  drawnCard,
+  viewerSeatId,
+  ownerName,
+  effect,
+  reducedMotion = false,
+}: {
   readonly drawnCard: StateSnapshotView["drawnCard"];
   readonly viewerSeatId: string;
   readonly ownerName?: string;
+  readonly effect?: DrawnCardEffect | null;
+  readonly reducedMotion?: boolean;
 }): ReactNode {
   const owner = ownerName ?? (drawnCard.state === "none" ? "" : drawnCard.playerId);
   return (
-    <section className="ui-drawn-tray" aria-labelledby="drawn-card-title">
+    <section
+      className="ui-drawn-tray"
+      aria-labelledby="drawn-card-title"
+      data-effect={!reducedMotion ? (effect ?? undefined) : undefined}
+    >
       <h2 id="drawn-card-title">Drawn card</h2>
       {drawnCard.state === "none" ? (
         <p>No card is drawn.</p>
       ) : drawnCard.state === "hidden" ? (
         <div>
           <CardBack label={`Drawn card held by ${owner}`} />
-          <p>{drawnCard.playerId === viewerSeatId ? "Your drawn card is face down." : `${owner} has a drawn card.`}</p>
+          <p>
+            {drawnCard.playerId === viewerSeatId
+              ? "Your drawn card is face down."
+              : `${owner} has a drawn card.`}
+          </p>
         </div>
       ) : (
         <div>
           <CardFace card={drawnCard.card} />
-          <p>{drawnCard.playerId === viewerSeatId ? "Your drawn card." : `Drawn card held by ${owner}.`}</p>
+          <p>
+            {drawnCard.playerId === viewerSeatId
+              ? "Your drawn card."
+              : `Drawn card held by ${owner}.`}
+          </p>
         </div>
       )}
     </section>
@@ -592,16 +750,24 @@ export function CardFace({ card }: { readonly card: CardView }): ReactNode {
 
   const suit = suitLabel(card.suit);
   return (
-    <span className={`ui-card-face ui-card-face--${card.suit}`} role="img" aria-label={`${rankLabel(card.rank)} of ${suit.text}`}>
+    <span
+      className={`ui-card-face ui-card-face--${card.suit}`}
+      role="img"
+      aria-label={`${rankLabel(card.rank)} of ${suit.text}`}
+    >
       <span className="ui-card-face__rank">{rankLabel(card.rank)}</span>
-      <span className="ui-card-face__suit" aria-hidden="true">{suit.symbol}</span>
+      <span className="ui-card-face__suit" aria-hidden="true">
+        {suit.symbol}
+      </span>
       <span className="sr-only">{suit.text}</span>
     </span>
   );
 }
 
 export function formatCard(card: CardView): string {
-  return card.rank === "JOKER" ? "Joker" : `${rankLabel(card.rank)} of ${suitLabel(card.suit).text}`;
+  return card.rank === "JOKER"
+    ? "Joker"
+    : `${rankLabel(card.rank)} of ${suitLabel(card.suit).text}`;
 }
 
 export function slotPositionLabel(slot: SlotView | SlotTarget): string {
@@ -623,7 +789,10 @@ export function slotPositionLabel(slot: SlotView | SlotTarget): string {
   return `Slot ${slot.slotId}`;
 }
 
-export function formatActionLogEntry(entry: ActionLogEntry, names: ReadonlyMap<string, string>): string {
+export function formatActionLogEntry(
+  entry: ActionLogEntry,
+  names: ReadonlyMap<string, string>,
+): string {
   switch (entry.type) {
     case "roundDealt":
       return `Round ${entry.roundNumber} dealt by ${nameFor(names, entry.dealerId)}.`;
@@ -636,7 +805,7 @@ export function formatActionLogEntry(entry: ActionLogEntry, names: ReadonlyMap<s
     case "reshuffled":
       return `${entry.cardCount} discard cards were reshuffled into the draw pile.`;
     case "slotReplaced":
-      return `${nameFor(names, entry.playerId)} replaced slot ${entry.slotId}.`;
+      return `${nameFor(names, entry.playerId)} replaced ${slotIdLabel(entry.slotId)}.`;
     case "cardDiscarded":
       return `${nameFor(names, entry.playerId)} discarded the drawn card.`;
     case "cambioCalled":
@@ -652,27 +821,29 @@ export function formatActionLogEntry(entry: ActionLogEntry, names: ReadonlyMap<s
     case "snapWindowOpened":
       return "A snap window opened.";
     case "snapWindowClosed":
-      return entry.resolvedBy === null ? "The snap window closed." : `${nameFor(names, entry.resolvedBy)} resolved the snap window.`;
+      return entry.resolvedBy === null
+        ? "The snap window closed."
+        : `${nameFor(names, entry.resolvedBy)} resolved the snap window.`;
     case "powerOffered":
       return `${nameFor(names, entry.ownerId)} may use ${powerLabel(entry.kind)}.`;
     case "powerSkipped":
-      return `${nameFor(names, entry.ownerId)} skipped ${powerLabel(entry.kind)}.`;
+      return `${nameFor(names, entry.ownerId)} ${powerSkipLabel(entry.reason)} ${powerLabel(entry.kind)}.`;
     case "powerTargetSelected":
-      return `${nameFor(names, entry.ownerId)} selected a ${powerLabel(entry.kind)} target.`;
+      return `${nameFor(names, entry.ownerId)} selected ${targetLabel(names, entry.target)} for ${powerLabel(entry.kind)}.`;
     case "powerRevealed":
       return `${nameFor(names, entry.recipientId)} received a private ${entry.cardCount}-card reveal.`;
     case "powerRevealAcknowledged":
       return `${nameFor(names, entry.ownerId)} acknowledged ${powerLabel(entry.kind)} reveal.`;
     case "blackKingSwapDecided":
-      return `${nameFor(names, entry.ownerId)} ${entry.swapped ? "completed" : "declined"} the Black King swap.`;
+      return `${nameFor(names, entry.ownerId)} ${entry.swapped ? "completed" : entry.confirmed ? "could not complete" : "declined"} the Black King swap${entry.targets.length === 0 ? "" : ` between ${entry.targets.map((target) => targetLabel(names, target)).join(" and ")}`}.`;
     case "powerTargetInvalidated":
-      return `${nameFor(names, entry.ownerId)} must reselect a ${powerLabel(entry.kind)} target.`;
+      return `${nameFor(names, entry.ownerId)} must reselect ${entry.targets.length === 0 ? "a target" : entry.targets.map((target) => targetLabel(names, target)).join(", ")} for ${powerLabel(entry.kind)}.`;
     case "snapAttempted":
-      return `${nameFor(names, entry.playerId)} attempted a snap at slot ${entry.target.slotId}; ${entry.correct ? "correct" : "wrong, penalty drawn"}.`;
+      return `${nameFor(names, entry.playerId)} attempted a snap at ${targetLabel(names, entry.target)}; ${entry.correct ? "correct" : "wrong, penalty drawn"}.`;
     case "penaltyCardDrawn":
-      return `${nameFor(names, entry.playerId)} drew a penalty card into slot ${entry.slotId}.`;
+      return `${nameFor(names, entry.playerId)} drew a penalty card into ${slotIdLabel(entry.slotId)}.`;
     case "transferCompleted":
-      return `${nameFor(names, entry.toPlayerId)} transferred a card to ${nameFor(names, entry.fromPlayerId)}.`;
+      return `${nameFor(names, entry.fromPlayerId)} transferred ${slotIdLabel(entry.fromSlotId)} to ${nameFor(names, entry.toPlayerId)} ${slotIdLabel(entry.toSlotId)}.`;
     case "playerRemoved":
       return `${nameFor(names, entry.playerId)} was removed.`;
     case "matchAbandoned":
@@ -721,16 +892,47 @@ function renderSlotContents(slot: SlotView, transientCard?: CardView): ReactNode
   }
 }
 
-function slotAriaLabel(slot: SlotView, seat: SeatView, action: SlotAction | null, transientCard?: CardView): string {
+function slotAriaLabel(
+  slot: SlotView,
+  seat: SeatView,
+  action: SlotAction | null,
+  transientCard?: CardView,
+): string {
   const position = slotPositionLabel(slot);
-  const base = transientCard !== undefined
-    ? `${position} transient wrong snap reveal, ${formatCard(transientCard)}, for ${seat.displayName}`
-    : slot.state === "hole"
-      ? `${position} empty slot for ${seat.displayName}`
-      : slot.state === "hidden"
-        ? `${position} face-down card for ${seat.displayName}`
-        : `${position} revealed ${formatCard(slot.card)} for ${seat.displayName}`;
+  const base =
+    transientCard !== undefined
+      ? `${position} transient wrong snap reveal, ${formatCard(transientCard)}, for ${seat.displayName}`
+      : slot.state === "hole"
+        ? `${position} empty slot for ${seat.displayName}`
+        : slot.state === "hidden"
+          ? `${position} face-down card for ${seat.displayName}`
+          : `${position} revealed ${formatCard(slot.card)} for ${seat.displayName}`;
   return action === null ? base : `${base}. ${action.label}`;
+}
+
+export function slotEffectKey(playerId: string, slotId: string): string {
+  return `${playerId}:${slotId}`;
+}
+
+function slotEffectLabel(effect: CardSlotEffect): string {
+  switch (effect) {
+    case "deal":
+      return "Deal animation";
+    case "replace":
+      return "Replacement animation";
+    case "discard":
+      return "Discard animation";
+    case "snap":
+      return "Snap animation";
+    case "penalty":
+      return "Penalty draw animation";
+    case "transfer":
+      return "Transfer animation";
+    case "swap":
+      return "Swap animation";
+    case "reveal":
+      return "Reveal animation";
+  }
 }
 
 function compareSlots(left: SlotView, right: SlotView): number {
@@ -760,6 +962,27 @@ function nameFor(names: ReadonlyMap<string, string>, playerId: string): string {
   return names.get(playerId) ?? playerId;
 }
 
+function targetLabel(names: ReadonlyMap<string, string>, target: SlotTarget): string {
+  return `${nameFor(names, target.playerId)} ${slotIdLabel(target.slotId)}`;
+}
+
+function slotIdLabel(slotId: string): string {
+  return `slot ${slotId}`;
+}
+
+function powerSkipLabel(
+  reason: Extract<ActionLogEntry, { readonly type: "powerSkipped" }>["reason"],
+): string {
+  switch (reason) {
+    case "skipped":
+      return "skipped";
+    case "autoSkipped":
+      return "had no legal target for";
+    case "ownerRemoved":
+      return "lost";
+  }
+}
+
 function rankLabel(rank: CardView["rank"]): string {
   switch (rank) {
     case "A":
@@ -777,7 +1000,10 @@ function rankLabel(rank: CardView["rank"]): string {
   }
 }
 
-function suitLabel(suit: Exclude<CardView, { readonly rank: "JOKER" }>["suit"]): { readonly text: string; readonly symbol: string } {
+function suitLabel(suit: Exclude<CardView, { readonly rank: "JOKER" }>["suit"]): {
+  readonly text: string;
+  readonly symbol: string;
+} {
   switch (suit) {
     case "clubs":
       return { text: "clubs", symbol: "♣" };

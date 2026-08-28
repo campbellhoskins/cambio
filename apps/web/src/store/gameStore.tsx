@@ -15,10 +15,20 @@ import {
 } from "@cambio/protocol";
 import { friendlyError } from "../connection/rejections.js";
 import type { BrowserStorage, PublicSessionDescriptor } from "../session/credentials.js";
-import { loadCredentials, publicDescriptors, removeCredential, upsertCredential } from "../session/credentials.js";
-import type { ConnectionController, ProtocolAdapter, SessionCredential } from "../connection/types.js";
+import {
+  loadCredentials,
+  publicDescriptors,
+  removeCredential,
+  upsertCredential,
+} from "../session/credentials.js";
+import type {
+  ConnectionController,
+  ProtocolAdapter,
+  SessionCredential,
+} from "../connection/types.js";
 
-export type ConnectionStatus = "idle" | "connecting" | "connected" | "reconnecting" | "closed" | "error";
+export type ConnectionStatus =
+  "idle" | "connecting" | "connected" | "reconnecting" | "closed" | "error";
 
 export interface GameState {
   readonly adapter: ProtocolAdapter;
@@ -35,7 +45,10 @@ export interface GameState {
   readonly needsResync: boolean;
   readonly controller: ConnectionController | null;
   readonly hydrateSessions: () => void;
-  readonly createRoom: (displayName: string, config: Partial<RoomConfig>) => Promise<SessionCredential>;
+  readonly createRoom: (
+    displayName: string,
+    config: Partial<RoomConfig>,
+  ) => Promise<SessionCredential>;
   readonly joinRoom: (roomCode: string, displayName: string) => Promise<SessionCredential>;
   readonly resumeSession: (descriptor: PublicSessionDescriptor) => Promise<SessionCredential>;
   readonly connectWithCredential: (credential: SessionCredential) => void;
@@ -63,8 +76,14 @@ const revisionCommandTypes = new Set<CommandType>([
   "hostRemovePlayer",
   "hostEndMatch",
 ]);
+const PRESENTATION_EVENT_TTL_MS = 1_800;
+const MAX_PRESENTATION_EVENTS = 8;
 
-function definedPartialConfig(config: { readonly roundCount?: number | undefined; readonly snapWindowMs?: number | undefined; readonly playerCap?: number | undefined }): Partial<RoomConfig> {
+function definedPartialConfig(config: {
+  readonly roundCount?: number | undefined;
+  readonly snapWindowMs?: number | undefined;
+  readonly playerCap?: number | undefined;
+}): Partial<RoomConfig> {
   return {
     ...(config.roundCount === undefined ? {} : { roundCount: config.roundCount }),
     ...(config.snapWindowMs === undefined ? {} : { snapWindowMs: config.snapWindowMs }),
@@ -105,23 +124,33 @@ export function createGameStore(adapter: ProtocolAdapter, storage: BrowserStorag
       controller: null,
       hydrateSessions: () => set({ sessions: publicDescriptors(loadCredentials(storage)) }),
       createRoom: async (displayName, config) => {
-        const parsedConfig = definedPartialConfig(RoomConfigSchema.partial().strict().parse(config));
+        const parsedConfig = definedPartialConfig(
+          RoomConfigSchema.partial().strict().parse(config),
+        );
         try {
-          return persistAndConnect(await adapter.createRoom({ displayName: displayName.trim(), config: parsedConfig }));
+          return persistAndConnect(
+            await adapter.createRoom({ displayName: displayName.trim(), config: parsedConfig }),
+          );
         } catch (error) {
           throw toFailure(error);
         }
       },
       joinRoom: async (roomCode, displayName) => {
         try {
-          return persistAndConnect(await adapter.joinRoom({ roomCode: roomCode.trim().toUpperCase(), displayName: displayName.trim() }));
+          return persistAndConnect(
+            await adapter.joinRoom({
+              roomCode: roomCode.trim().toUpperCase(),
+              displayName: displayName.trim(),
+            }),
+          );
         } catch (error) {
           throw toFailure(error);
         }
       },
       resumeSession: async (descriptor) => {
-        const stored = loadCredentials(storage).find((credential) =>
-          credential.roomCode === descriptor.roomCode && credential.seatId === descriptor.seatId
+        const stored = loadCredentials(storage).find(
+          (credential) =>
+            credential.roomCode === descriptor.roomCode && credential.seatId === descriptor.seatId,
         );
         if (stored === undefined) {
           const message = friendlyError("E_CREDENTIAL_INVALID");
@@ -139,11 +168,27 @@ export function createGameStore(adapter: ProtocolAdapter, storage: BrowserStorag
       },
       connectWithCredential: (credential) => {
         get().controller?.close();
-        set({ connectionStatus: "connecting", connectionAnnouncement: `Connecting to room ${credential.roomCode}.`, lastError: null });
+        set({
+          connectionStatus: "connecting",
+          connectionAnnouncement: `Connecting to room ${credential.roomCode}.`,
+          lastError: null,
+        });
         const controller = adapter.connect(credential, {
-          onOpen: () => set({ connectionStatus: "connected", connectionAnnouncement: `Connected to room ${credential.roomCode}.` }),
-          onClose: (reason) => set({ connectionStatus: reason === "resync requested" ? "reconnecting" : "closed", connectionAnnouncement: reason === "resync requested" ? "Resyncing room state." : "Disconnected from the room." }),
-          onError: (message) => set({ connectionStatus: "error", connectionAnnouncement: message, lastError: message }),
+          onOpen: () =>
+            set({
+              connectionStatus: "connected",
+              connectionAnnouncement: `Connected to room ${credential.roomCode}.`,
+            }),
+          onClose: (reason) =>
+            set({
+              connectionStatus: reason === "resync requested" ? "reconnecting" : "closed",
+              connectionAnnouncement:
+                reason === "resync requested"
+                  ? "Resyncing room state."
+                  : "Disconnected from the room.",
+            }),
+          onError: (message) =>
+            set({ connectionStatus: "error", connectionAnnouncement: message, lastError: message }),
           onMessage: (message) => get().applyServerMessage(message),
         });
         set({ controller });
@@ -180,20 +225,37 @@ export function createGameStore(adapter: ProtocolAdapter, storage: BrowserStorag
         }
 
         if (parsed.revision < (currentRevision ?? -1)) {
-          if ((parsed.type === "commandAccepted" || parsed.type === "commandRejected") && currentRevision !== null) {
+          if (
+            (parsed.type === "commandAccepted" || parsed.type === "commandRejected") &&
+            currentRevision !== null
+          ) {
             get().controller?.requestSnapshot();
-            set({ needsResync: true, connectionAnnouncement: "Command acknowledged against an old revision. Resyncing." });
+            set({
+              needsResync: true,
+              connectionAnnouncement: "Command acknowledged against an old revision. Resyncing.",
+            });
           }
           return;
         }
 
-        if (currentRevision !== null && parsed.revision === currentRevision && parsed.type === "stateSnapshot") {
+        if (
+          currentRevision !== null &&
+          parsed.revision === currentRevision &&
+          parsed.type === "stateSnapshot"
+        ) {
           return;
         }
 
-        if (parsed.type !== "stateSnapshot" && currentRevision !== null && parsed.revision > currentRevision + 1) {
+        if (
+          parsed.type !== "stateSnapshot" &&
+          currentRevision !== null &&
+          parsed.revision > currentRevision + 1
+        ) {
           get().controller?.requestSnapshot();
-          set({ needsResync: true, connectionAnnouncement: "Room update gap detected. Resyncing." });
+          set({
+            needsResync: true,
+            connectionAnnouncement: "Room update gap detected. Resyncing.",
+          });
           return;
         }
 
@@ -208,7 +270,10 @@ export function createGameStore(adapter: ProtocolAdapter, storage: BrowserStorag
         }
 
         if (parsed.type === "commandAccepted") {
-          set({ connectionAnnouncement: `${parsed.result.commandType} accepted.`, lastError: null });
+          set({
+            connectionAnnouncement: `${parsed.result.commandType} accepted.`,
+            lastError: null,
+          });
           return;
         }
 
@@ -223,14 +288,21 @@ export function createGameStore(adapter: ProtocolAdapter, storage: BrowserStorag
         }
 
         if (parsed.type === "presentationEvent") {
+          const payload = parsed.payload;
           set((state) => ({
-            presentationEvents: [...state.presentationEvents, parsed.payload],
-            connectionAnnouncement: presentationAnnouncement(parsed.payload),
+            presentationEvents: collapsePresentationEvents(state.presentationEvents, payload),
+            connectionAnnouncement: presentationAnnouncement(payload),
           }));
-          if (parsed.payload.type === "wrongSnapReveal") {
+          try {
             window.setTimeout(() => {
-              set((state) => ({ presentationEvents: state.presentationEvents.filter((event) => event !== parsed.payload) }));
-            }, 1_800);
+              set((state) => ({
+                presentationEvents: state.presentationEvents.filter((event) => event !== payload),
+              }));
+            }, PRESENTATION_EVENT_TTL_MS);
+          } catch {
+            set((state) => ({
+              presentationEvents: state.presentationEvents.filter((event) => event !== payload),
+            }));
           }
         }
       },
@@ -240,7 +312,14 @@ export function createGameStore(adapter: ProtocolAdapter, storage: BrowserStorag
         if (current !== null) {
           const sessions = removeCredential(storage, current.roomCode, current.seatId);
           get().controller?.close();
-          set({ credential: null, sessions: publicDescriptors(sessions), snapshot: null, revision: null, controller: null, connectionStatus: "idle" });
+          set({
+            credential: null,
+            sessions: publicDescriptors(sessions),
+            snapshot: null,
+            revision: null,
+            controller: null,
+            connectionStatus: "idle",
+          });
         }
       },
     };
@@ -253,6 +332,26 @@ function presentationAnnouncement(event: PresentationEventPayload): string {
       return "Wrong snap reveal shown briefly and penalty applied.";
     case "reshuffled":
       return `${event.cardCount} cards reshuffled into the draw pile.`;
+  }
+}
+
+function collapsePresentationEvents(
+  current: readonly PresentationEventPayload[],
+  nextEvent: PresentationEventPayload,
+): readonly PresentationEventPayload[] {
+  const nextKey = presentationEventCollapseKey(nextEvent);
+  return [
+    ...current.filter((event) => presentationEventCollapseKey(event) !== nextKey),
+    nextEvent,
+  ].slice(-MAX_PRESENTATION_EVENTS);
+}
+
+function presentationEventCollapseKey(event: PresentationEventPayload): string {
+  switch (event.type) {
+    case "wrongSnapReveal":
+      return `${event.type}:${event.target.playerId}:${event.target.slotId}`;
+    case "reshuffled":
+      return event.type;
   }
 }
 

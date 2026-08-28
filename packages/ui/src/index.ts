@@ -19,6 +19,10 @@ export {
   StartMatchPanel,
   TextField,
   NumberField,
+  slotEffectKey,
+  type CardSlotEffect,
+  type DrawnCardEffect,
+  type PileEffect,
   type HostConfigLimits,
   type SlotAction,
 } from "./components.js";

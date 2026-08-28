@@ -2,7 +2,23 @@ import "@testing-library/jest-dom/vitest";
 import { cleanup, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { Button, CardBack, CardGrid, Dialog, DrawnCardTray, FieldError, HostConfigPanel, LiveRegion, PileSummary, PublicActionLog, Roster, Scoreboard, ShareRoomPanel, StartMatchPanel } from "./components.js";
+import {
+  Button,
+  CardBack,
+  CardGrid,
+  Dialog,
+  DrawnCardTray,
+  FieldError,
+  HostConfigPanel,
+  LiveRegion,
+  PileSummary,
+  PublicActionLog,
+  Roster,
+  Scoreboard,
+  ShareRoomPanel,
+  StartMatchPanel,
+  slotEffectKey,
+} from "./components.js";
 import type { SeatGridView, SeatView, StateSnapshotView } from "@cambio/protocol";
 
 const seats: SeatView[] = [
@@ -32,7 +48,11 @@ const seats: SeatView[] = [
   },
 ];
 
-const config: StateSnapshotView["room"]["config"] = { roundCount: 9, snapWindowMs: 5_000, playerCap: 6 };
+const config: StateSnapshotView["room"]["config"] = {
+  roundCount: 9,
+  snapWindowMs: 5_000,
+  playerCap: 6,
+};
 const limits = {
   roundCount: { min: 1, max: 20 },
   snapWindowSeconds: { min: 2, max: 10 },
@@ -75,7 +95,14 @@ describe("reusable lobby components", () => {
   it("shares code and link without any credential string", async () => {
     const user = userEvent.setup();
     const onCopy = vi.fn();
-    render(<ShareRoomPanel roomCode="ABCD12" roomLink="http://localhost/room/ABCD12" onCopy={onCopy} copied={true} />);
+    render(
+      <ShareRoomPanel
+        roomCode="ABCD12"
+        roomLink="http://localhost/room/ABCD12"
+        onCopy={onCopy}
+        copied={true}
+      />,
+    );
 
     expect(screen.getByText("ABCD12")).toBeInTheDocument();
     expect(screen.queryByText(/secret-token/i)).not.toBeInTheDocument();
@@ -84,7 +111,9 @@ describe("reusable lobby components", () => {
   });
 
   it("enables start only when the host has enough players", () => {
-    const { rerender } = render(<StartMatchPanel canStart={false} isHost={true} playerCount={1} onStart={vi.fn()} />);
+    const { rerender } = render(
+      <StartMatchPanel canStart={false} isHost={true} playerCount={1} onStart={vi.fn()} />,
+    );
     expect(screen.getByRole("button", { name: "Start match" })).toBeDisabled();
     expect(screen.getByText("At least 2 players are required.")).toBeInTheDocument();
 
@@ -130,19 +159,33 @@ describe("reusable lobby components", () => {
       slots: [
         { slotId: "a", kind: "starting", position: "topLeft", state: "hidden" },
         { slotId: "b", kind: "starting", position: "topRight", state: "hole" },
-        { slotId: "c", kind: "starting", position: "bottomLeft", state: "revealed", card: { rank: "Q", suit: "hearts" } },
+        {
+          slotId: "c",
+          kind: "starting",
+          position: "bottomLeft",
+          state: "revealed",
+          card: { rank: "Q", suit: "hearts" },
+        },
         { slotId: "d", kind: "starting", position: "bottomRight", state: "hidden" },
       ],
     };
 
     render(<CardGrid seat={seats[0]!} grid={grid} viewerSeatId="alice" />);
 
-    expect(screen.getByRole("button", { name: /top left face-down card/i })).toHaveTextContent("Face down");
-    expect(screen.getByRole("button", { name: /top right empty slot/i })).toHaveTextContent("Empty");
-    expect(screen.getByRole("button", { name: /bottom left revealed queen of hearts/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /top left face-down card/i })).toHaveTextContent(
+      "Face down",
+    );
+    expect(screen.getByRole("button", { name: /top right empty slot/i })).toHaveTextContent(
+      "Empty",
+    );
+    expect(
+      screen.getByRole("button", { name: /bottom left revealed queen of hearts/i }),
+    ).toBeInTheDocument();
     expect(screen.getAllByText("Face down")).toHaveLength(2);
     expect(screen.getByLabelText(/top left face-down card/i)).not.toHaveTextContent("Queen");
-    expect(screen.getByLabelText(/top left face-down card/i)).not.toHaveAccessibleName(/queen|heart|Q/i);
+    expect(screen.getByLabelText(/top left face-down card/i)).not.toHaveAccessibleName(
+      /queen|heart|Q/i,
+    );
   });
 
   it("supports roving keyboard navigation in card grids", async () => {
@@ -157,7 +200,14 @@ describe("reusable lobby components", () => {
       ],
     };
 
-    render(<CardGrid seat={seats[0]!} grid={grid} viewerSeatId="alice" getSlotAction={() => ({ label: "Attempt snap", onSelect: vi.fn() })} />);
+    render(
+      <CardGrid
+        seat={seats[0]!}
+        grid={grid}
+        viewerSeatId="alice"
+        getSlotAction={() => ({ label: "Attempt snap", onSelect: vi.fn() })}
+      />,
+    );
     const topLeft = screen.getByRole("button", { name: /top left face-down card/i });
     topLeft.focus();
 
@@ -174,28 +224,135 @@ describe("reusable lobby components", () => {
       <PublicActionLog
         seats={seats}
         entries={[
-          { type: "powerTargetSelected", ownerId: "alice", kind: "blindSwap", target: { playerId: "bob", slotId: "bob-top-left" } },
-          { type: "snapAttempted", playerId: "bob", target: { playerId: "alice", slotId: "alice-top-right" }, correct: false, receivedOrder: 1 },
+          {
+            type: "powerTargetSelected",
+            ownerId: "alice",
+            kind: "blindSwap",
+            target: { playerId: "bob", slotId: "bob-top-left" },
+          },
+          {
+            type: "snapAttempted",
+            playerId: "bob",
+            target: { playerId: "alice", slotId: "alice-top-right" },
+            correct: false,
+            receivedOrder: 1,
+          },
         ]}
       />,
     );
 
-    expect(screen.getByText(/selected a blind swap target/i)).toBeInTheDocument();
+    expect(screen.getByText(/selected bob slot bob-top-left for blind swap/i)).toBeInTheDocument();
     expect(screen.getByText(/wrong, penalty drawn/i)).toBeInTheDocument();
-    expect(screen.queryByText(/queen|king|ace|hearts|spades|clubs|diamonds/i)).not.toBeInTheDocument();
+    expect(
+      screen.queryByText(/queen|king|ace|hearts|spades|clubs|diamonds/i),
+    ).not.toBeInTheDocument();
+  });
+
+  it("renders polished rank-safe copy for positions, penalties, pauses, and scoring", () => {
+    render(
+      <PublicActionLog
+        seats={seats}
+        entries={[
+          {
+            type: "roundEnded",
+            reason: "cambio",
+            scores: [{ playerId: "alice", rawScore: 4, matchPoints: 0, isRoundWinner: true }],
+          },
+          {
+            type: "transferCompleted",
+            fromPlayerId: "bob",
+            toPlayerId: "alice",
+            fromSlotId: "bob-top-left",
+            toSlotId: "alice-bottom-right",
+          },
+          {
+            type: "blackKingSwapDecided",
+            ownerId: "alice",
+            confirmed: true,
+            swapped: true,
+            targets: [
+              { playerId: "alice", slotId: "alice-top-left" },
+              { playerId: "bob", slotId: "bob-top-right" },
+            ],
+          },
+          { type: "matchAbandoned", reason: "hostEnded", cumulativeScores: { alice: 0, bob: 8 } },
+        ]}
+      />,
+    );
+
+    expect(screen.getByText(/scores recorded for 1 players/i)).toBeInTheDocument();
+    expect(
+      screen.getByText(/transferred slot bob-top-left to alice slot alice-bottom-right/i),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        /black king swap between alice slot alice-top-left and bob slot bob-top-right/i,
+      ),
+    ).toBeInTheDocument();
+    expect(screen.getByText(/match abandoned/i)).toBeInTheDocument();
+    expect(
+      screen.queryByText(/joker|of diamonds|of clubs|of hearts|of spades|queen of|ace of/i),
+    ).not.toBeInTheDocument();
+  });
+
+  it("applies presentation effect hooks and suppresses them for reduced motion", () => {
+    const grid: SeatGridView = {
+      playerId: "alice",
+      slots: [{ slotId: "a", kind: "starting", position: "topLeft", state: "hidden" }],
+    };
+    const effects = new Map([[slotEffectKey("alice", "a"), "deal" as const]]);
+    const { rerender } = render(
+      <CardGrid seat={seats[0]!} grid={grid} viewerSeatId="alice" slotEffects={effects} />,
+    );
+
+    expect(screen.getByRole("button", { name: /top left face-down card/i })).toHaveAttribute(
+      "data-effect",
+      "deal",
+    );
+
+    rerender(
+      <CardGrid
+        seat={seats[0]!}
+        grid={grid}
+        viewerSeatId="alice"
+        slotEffects={effects}
+        reducedMotion={true}
+      />,
+    );
+    expect(screen.getByRole("button", { name: /top left face-down card/i })).not.toHaveAttribute(
+      "data-effect",
+    );
+    expect(screen.getByRole("button", { name: /top left face-down card/i })).toHaveTextContent(
+      "Face down",
+    );
   });
 
   it("renders pile, drawn-card, and score summaries", () => {
     render(
       <>
-        <PileSummary piles={{ drawPileCount: 12, discardPileCount: 0, discardTop: null, outOfPlayCount: 2 }} />
-        <DrawnCardTray drawnCard={{ state: "hidden", playerId: "bob" }} viewerSeatId="alice" ownerName="Bob" />
+        <PileSummary
+          piles={{ drawPileCount: 12, discardPileCount: 0, discardTop: null, outOfPlayCount: 2 }}
+          pileEffect="reshuffle"
+        />
+        <DrawnCardTray
+          drawnCard={{ state: "hidden", playerId: "bob" }}
+          viewerSeatId="alice"
+          ownerName="Bob"
+          effect="draw"
+        />
         <Scoreboard
           seats={seats}
           scores={[
-            { playerId: "alice", cumulativeScore: 3, lastRoundRawScore: 3, lastRoundMatchPoints: 0, isRoundWinner: true },
+            {
+              playerId: "alice",
+              cumulativeScore: 3,
+              lastRoundRawScore: 3,
+              lastRoundMatchPoints: 0,
+              isRoundWinner: true,
+            },
             { playerId: "bob", cumulativeScore: 12 },
           ]}
+          highlight={true}
         />
       </>,
     );
